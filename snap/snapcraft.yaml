@@ -1,5 +1,4 @@
 name: winetricks
-base: core18
 version: 'git'
 summary: Winetricks is an easy way to work around problems in Wine
 description: |
