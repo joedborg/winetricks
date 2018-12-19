@@ -1,0 +1,20 @@
+name: winetricks
+base: core18
+version: 'git'
+summary: Winetricks is an easy way to work around problems in Wine
+description: |
+  It has a menu of supported games/apps for which it can do all the
+  workarounds automatically. It also allows the installation of missing
+  DLLs and tweaking of various Wine settings.
+
+grade: stable
+confinement: classic
+
+parts:
+  winetricks:
+    plugin: make
+    source: .
+
+apps:
+  winetricks:
+    command: usr/bin/winetricks
