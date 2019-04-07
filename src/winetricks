@@ -7255,6 +7255,25 @@ load_dxvk102()
     helper_dxvk "$file1" "d3d10_enabled" "3.19" "1.1.88"
 }
 
+w_metadata dxvk110 dlls \
+    title="Vulkan-based D3D10/D3D11 implementation for Linux / Wine (1.1)" \
+    publisher="Philip Rebohle" \
+    year="2018" \
+    media="download" \
+    file1="dxvk-1.1.tar.gz" \
+    installed_file1="$W_SYSTEM32_DLLS_WIN/d3d10.dll" \
+    installed_file2="$W_SYSTEM32_DLLS_WIN/d3d10_1.dll" \
+    installed_file3="$W_SYSTEM32_DLLS_WIN/d3d10core.dll" \
+    installed_file4="$W_SYSTEM32_DLLS_WIN/d3d11.dll" \
+    installed_file5="$W_SYSTEM32_DLLS_WIN/dxgi.dll"
+
+load_dxvk110()
+{
+    # https://github.com/doitsujin/dxvk
+    w_download "https://github.com/doitsujin/dxvk/releases/download/v1.1/dxvk-1.1.tar.gz" cf1e6f848b14251bd7547af4a308646631d5899d278c24e919e6f082bbbaf671
+    helper_dxvk "$file1" "d3d10_enabled" "4.5" "1.1.88"
+}
+
 
 #----------------------------------------------------------------
 
@@ -7276,7 +7295,7 @@ load_dxvk()
     w_download_to "${W_TMP_EARLY}" "https://raw.githubusercontent.com/doitsujin/dxvk/latest-release/RELEASE"
     dxvk_version="$(cat "${W_TMP_EARLY}/RELEASE")"
     w_linkcheck_ignore=1 w_download "https://github.com/doitsujin/dxvk/releases/download/v${dxvk_version}/dxvk-${dxvk_version}.tar.gz"
-    helper_dxvk "dxvk-${dxvk_version}.tar.gz" "d3d10_enabled" "3.19" "1.1.88"
+    helper_dxvk "dxvk-${dxvk_version}.tar.gz" "d3d10_enabled" "4.5" "1.1.88"
     unset dxvk_version
 }
 
@@ -10803,9 +10822,10 @@ w_metadata vcrun2013 dlls \
 
 load_vcrun2013()
 {
-    # https://www.microsoft.com/en-us/download/details.aspx?id=40784
+    # https://support.microsoft.com/en-gb/help/3179560/update-for-visual-c-2013-and-visual-c-redistributable-package
     # 2015/01/14: a22895e55b26202eae166838edbe2ea6aad00d7ea600c11f8a31ede5cbce2048
-    w_download https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe a22895e55b26202eae166838edbe2ea6aad00d7ea600c11f8a31ede5cbce2048
+    # 2019/03/24: 89f4e593ea5541d1c53f983923124f9fd061a1c0c967339109e375c661573c17
+    w_download https://download.microsoft.com/download/0/5/6/056dcda9-d667-4e27-8001-8a0c6971d6b1/vcredist_x86.exe 89f4e593ea5541d1c53f983923124f9fd061a1c0c967339109e375c661573c17
 
     w_override_dlls native,builtin atl120 msvcp120 msvcr120 vcomp120
     w_try_cd "$W_CACHE"/"$W_PACKAGE"
@@ -10815,7 +10835,8 @@ load_vcrun2013()
         win64)
             # Also install the 64-bit version
             # 2015/10/19: e554425243e3e8ca1cd5fe550db41e6fa58a007c74fad400274b128452f38fb8
-            w_download https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe e554425243e3e8ca1cd5fe550db41e6fa58a007c74fad400274b128452f38fb8
+            # 2019/03/24: 20e2645b7cd5873b1fa3462b99a665ac8d6e14aae83ded9d875fea35ffdd7d7e
+            w_download https://download.microsoft.com/download/0/5/6/056dcda9-d667-4e27-8001-8a0c6971d6b1/vcredist_x64.exe 20e2645b7cd5873b1fa3462b99a665ac8d6e14aae83ded9d875fea35ffdd7d7e
             if w_workaround_wine_bug 30713 "Manually extracting the 64-bit dlls"; then
                 rm -f "$W_TMP"/*  # Avoid permission error
                 w_try_cabextract --directory="$W_TMP" vcredist_x64.exe
