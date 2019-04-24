@@ -5701,6 +5701,9 @@ load_amstream()
 {
     helper_win7sp1 x86_microsoft-windows-directshow-other_31bf3856ad364e35_6.1.7601.17514_none_0f58f1e53efca91e/amstream.dll
     w_try cp "$W_TMP/x86_microsoft-windows-directshow-other_31bf3856ad364e35_6.1.7601.17514_none_0f58f1e53efca91e/amstream.dll" "$W_SYSTEM32_DLLS/amstream.dll"
+
+    w_override_dlls native,builtin amstream
+
     w_try_regsvr amstream.dll
 
     if [ "$W_ARCH" = "win64" ]; then
@@ -5708,8 +5711,6 @@ load_amstream()
         w_try cp "$W_TMP/amd64_microsoft-windows-directshow-other_31bf3856ad364e35_6.1.7601.17514_none_6b778d68f75a1a54/amstream.dll" "$W_SYSTEM64_DLLS/amstream.dll"
         w_try_regsvr64 amstream.dll
     fi
-
-    w_override_dlls native,builtin amstream
 }
 
 #----------------------------------------------------------------
@@ -6544,8 +6545,8 @@ load_devenum()
 
     w_try_cabextract -d "$W_TMP" -L -F 'dxnt.cab' "$W_CACHE/directx9/$DIRECTX_NAME"
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'devenum.dll' "$W_TMP/dxnt.cab"
-    w_try_regsvr devenum.dll
     w_override_dlls native devenum
+    w_try_regsvr devenum.dll
 }
 
 #----------------------------------------------------------------
@@ -6564,8 +6565,8 @@ load_dinput()
 
     w_try_cabextract -d "$W_TMP" -L -F 'dxnt.cab' "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dinput.dll' "$W_TMP/dxnt.cab"
-    w_try_regsvr dinput
     w_override_dlls native dinput
+    w_try_regsvr dinput
 }
 
 #----------------------------------------------------------------
@@ -6584,8 +6585,8 @@ load_dinput8()
 
     w_try_cabextract -d "$W_TMP" -L -F 'dxnt.cab' "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dinput8.dll' "$W_TMP/dxnt.cab"
-    w_try_regsvr dinput8
     w_override_dlls native dinput8
+    w_try_regsvr dinput8
 }
 
 #----------------------------------------------------------------
@@ -6619,6 +6620,27 @@ load_directmusic()
 
     # FIXME: dxnt.cab doesn't contain this DLL. Is this really needed?
     w_override_dlls native streamci
+}
+
+#----------------------------------------------------------------
+
+w_metadata directshow dlls \
+    title="DirectShow runtime DLLs (amstream, qasf, qcap, qdvd, qedit, quartz)" \
+    publisher="Microsoft" \
+    year="2011" \
+    media="download" \
+    file1="../win7sp1/windows6.1-KB976932-X86.exe"
+
+load_directshow()
+{
+    w_warn "You can specify individual DirectShow verbs instead. e.g. 'winetricks quartz'"
+
+    w_call amstream
+    w_call qasf
+    w_call qcap
+    w_call qdvd
+    w_call qedit
+    w_call quartz
 }
 
 #----------------------------------------------------------------
@@ -6686,19 +6708,17 @@ load_directx9()
     # How many of these do we really need?
     # We should probably remove most of these...?
     w_call devenum
-    w_call quartz
+    w_call directshow
 
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F "msdmo.dll" "$W_TMP/dxnt.cab"
-    w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F "qcap.dll" "$W_TMP/dxnt.cab"
-    w_try_regsvr qcap.dll
 
     w_override_dlls native d3dim d3drm d3dx8 d3dx9_24 d3dx9_25 d3dx9_26 d3dx9_27 d3dx9_28 d3dx9_29
     w_override_dlls native d3dx9_30 d3dx9_31 d3dx9_32 d3dx9_33 d3dx9_34 d3dx9_35 d3dx9_36 d3dx9_37
     w_override_dlls native d3dx9_38 d3dx9_39 d3dx9_40 d3dx9_41 d3dx9_42 d3dx9_43 d3dxof
     w_override_dlls native dciman32 ddrawex dmband dmcompos dmime dmloader dmscript dmstyle
     w_override_dlls native dmsynth dmusic dmusic32 dplay dplayx dpnaddr dpnet dpnhpast dpnlobby
-    w_override_dlls native dswave dxdiagn msdmo qcap streamci
+    w_override_dlls native dswave dxdiagn msdmo streamci
     w_override_dlls native dxdiag.exe
     w_override_dlls builtin d3d8 d3d9 dinput dinput8 dsound
 
@@ -6728,12 +6748,10 @@ load_dpvoice()
       w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dpvvox.dll' "$x"
       w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dpvacm.dll' "$x"
     done
+    w_override_dlls native dpvoice dpvvox dpvacm
     w_try_regsvr dpvoice.dll
     w_try_regsvr dpvvox.dll
     w_try_regsvr dpvacm.dll
-    w_override_dlls native dpvoice
-    w_override_dlls native dpvvox
-    w_override_dlls native dpvacm
 }
 
 #----------------------------------------------------------------
@@ -7337,9 +7355,8 @@ load_dmband()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dmband.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dmband.dll
-
     w_override_dlls native dmband
+    w_try_regsvr dmband.dll
 }
 
 #----------------------------------------------------------------
@@ -7359,9 +7376,8 @@ load_dmcompos()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dmcompos.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dmcompos.dll
-
     w_override_dlls native dmcompos
+    w_try_regsvr dmcompos.dll
 }
 
 #----------------------------------------------------------------
@@ -7381,9 +7397,8 @@ load_dmime()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dmime.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dmime.dll
-
     w_override_dlls native dmime
+    w_try_regsvr dmime.dll
 }
 
 #----------------------------------------------------------------
@@ -7403,9 +7418,8 @@ load_dmloader()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dmloader.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dmloader.dll
-
     w_override_dlls native dmloader
+    w_try_regsvr dmloader.dll
 }
 
 #----------------------------------------------------------------
@@ -7425,9 +7439,8 @@ load_dmscript()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dmscript.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dmscript.dll
-
     w_override_dlls native dmscript
+    w_try_regsvr dmscript.dll
 }
 
 #----------------------------------------------------------------
@@ -7447,9 +7460,8 @@ load_dmstyle()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dmstyle.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dmstyle.dll
-
     w_override_dlls native dmstyle
+    w_try_regsvr dmstyle.dll
 }
 
 #----------------------------------------------------------------
@@ -7469,9 +7481,8 @@ load_dmsynth()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dmsynth.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dmsynth.dll
-
     w_override_dlls native dmsynth
+    w_try_regsvr dmsynth.dll
 }
 
 #----------------------------------------------------------------
@@ -7491,9 +7502,8 @@ load_dmusic()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dmusic.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dmusic.dll
-
     w_override_dlls native dmusic
+    w_try_regsvr dmusic.dll
 }
 
 #----------------------------------------------------------------
@@ -7513,9 +7523,8 @@ load_dswave()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dswave.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dswave.dll
-
     w_override_dlls native dswave
+    w_try_regsvr dswave.dll
 }
 
 #----------------------------------------------------------------
@@ -8513,6 +8522,7 @@ load_dxdiagn()
 {
     helper_win7sp1 x86_microsoft-windows-d..x-directxdiagnostic_31bf3856ad364e35_6.1.7601.17514_none_25cb021dbc0611db/dxdiagn.dll
     w_try cp "$W_TMP/x86_microsoft-windows-d..x-directxdiagnostic_31bf3856ad364e35_6.1.7601.17514_none_25cb021dbc0611db/dxdiagn.dll" "$W_SYSTEM32_DLLS/dxdiagn.dll"
+    w_override_dlls native,builtin dxdiagn
     w_try_regsvr dxdiagn.dll
 
     if [ "$W_ARCH" = "win64" ]; then
@@ -8520,8 +8530,6 @@ load_dxdiagn()
         w_try cp "$W_TMP/amd64_microsoft-windows-d..x-directxdiagnostic_31bf3856ad364e35_6.1.7601.17514_none_81e99da174638311/dxdiagn.dll" "$W_SYSTEM64_DLLS/dxdiagn.dll"
         w_try_regsvr64 dxdiagn.dll
     fi
-
-    w_override_dlls native,builtin dxdiagn
 }
 
 #----------------------------------------------------------------
@@ -8541,8 +8549,8 @@ load_dxdiagn_feb2010()
 
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dxdiagn.dll' "$W_TMP/dxnt.cab"
-    w_try_regsvr dxdiagn.dll
     w_override_dlls native dxdiagn
+    w_try_regsvr dxdiagn.dll
 }
 
 #----------------------------------------------------------------
@@ -8562,9 +8570,8 @@ load_dsound()
     w_try_cabextract -d "$W_TMP" -L -F dxnt.cab "$W_CACHE"/directx9/$DIRECTX_NAME
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -L -F 'dsound.dll' "$W_TMP/dxnt.cab"
 
-    w_try_regsvr dsound.dll
-
     w_override_dlls native dsound
+    w_try_regsvr dsound.dll
 }
 
 #----------------------------------------------------------------
@@ -9227,8 +9234,8 @@ load_itircl()
 
     w_try_cabextract -d "$W_TMP" -F hhupd.exe "$W_CACHE"/hhw/htmlhelp.exe
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -F itircl.dll "$W_TMP"/hhupd.exe
-    w_try_regsvr itircl.dll
     w_override_dlls native itircl
+    w_try_regsvr itircl.dll
 }
 
 #----------------------------------------------------------------
@@ -9248,8 +9255,8 @@ load_itss()
 
     w_try_cabextract -d "$W_TMP" -F hhupd.exe "$W_CACHE"/hhw/htmlhelp.exe
     w_try_cabextract -d "$W_SYSTEM32_DLLS" -F itss.dll "$W_TMP"/hhupd.exe
-    w_try_regsvr itss.dll
     w_override_dlls native itss
+    w_try_regsvr itss.dll
 }
 
 #----------------------------------------------------------------
@@ -10032,6 +10039,8 @@ load_qasf()
 {
     helper_win7sp1 x86_microsoft-windows-directshow-asf_31bf3856ad364e35_6.1.7601.17514_none_1cc4e9c15ccc8ae8/qasf.dll
     w_try cp "$W_TMP/x86_microsoft-windows-directshow-asf_31bf3856ad364e35_6.1.7601.17514_none_1cc4e9c15ccc8ae8/qasf.dll" "$W_SYSTEM32_DLLS/qasf.dll"
+
+    w_override_dlls native,builtin qasf
     w_try_regsvr qasf.dll
 
     if [ "$W_ARCH" = "win64" ]; then
@@ -10039,8 +10048,30 @@ load_qasf()
         w_try cp "$W_TMP/amd64_microsoft-windows-directshow-asf_31bf3856ad364e35_6.1.7601.17514_none_78e385451529fc1e/qasf.dll" "$W_SYSTEM64_DLLS/qasf.dll"
         w_try_regsvr64 qasf.dll
     fi
+}
 
-    w_override_dlls native,builtin qasf
+#----------------------------------------------------------------
+
+w_metadata qcap dlls \
+    title="qcap.dll" \
+    publisher="Microsoft" \
+    year="2011" \
+    media="download" \
+    file1="../win7sp1/windows6.1-KB976932-X86.exe" \
+    installed_file1="$W_SYSTEM32_DLLS_WIN/qcap.dll"
+
+load_qcap()
+{
+    helper_win7sp1 x86_microsoft-windows-directshow-capture_31bf3856ad364e35_6.1.7601.17514_none_bae08d1e7dcccf2a/qcap.dll
+    w_try cp "$W_TMP/x86_microsoft-windows-directshow-capture_31bf3856ad364e35_6.1.7601.17514_none_bae08d1e7dcccf2a/qcap.dll" "$W_SYSTEM32_DLLS/qcap.dll"
+    w_override_dlls native,builtin qcap
+    w_try_regsvr qcap.dll
+
+    if [ "$W_ARCH" = "win64" ]; then
+        helper_win7sp1_x64 amd64_microsoft-windows-directshow-capture_31bf3856ad364e35_6.1.7601.17514_none_16ff28a2362a4060/qcap.dll
+        w_try cp "$W_TMP/amd64_microsoft-windows-directshow-capture_31bf3856ad364e35_6.1.7601.17514_none_16ff28a2362a4060/qcap.dll" "$W_SYSTEM64_DLLS/qcap.dll"
+        w_try_regsvr64 qcap.dll
+    fi
 }
 
 #----------------------------------------------------------------
@@ -10080,6 +10111,7 @@ load_qedit()
 {
     helper_win7sp1 x86_microsoft-windows-qedit_31bf3856ad364e35_6.1.7601.17514_none_5ca34698a5a970d2/qedit.dll
     w_try cp "$W_TMP/x86_microsoft-windows-qedit_31bf3856ad364e35_6.1.7601.17514_none_5ca34698a5a970d2/qedit.dll" "$W_SYSTEM32_DLLS/qedit.dll"
+    w_override_dlls native,builtin qedit
     w_try_regsvr qedit.dll
 
     if [ "$W_ARCH" = "win64" ]; then
@@ -10087,8 +10119,6 @@ load_qedit()
         w_try cp "$W_TMP/amd64_microsoft-windows-qedit_31bf3856ad364e35_6.1.7601.17514_none_b8c1e21c5e06e208/qedit.dll" "$W_SYSTEM64_DLLS/qedit.dll"
         w_try_regsvr64 qedit.dll
     fi
-
-    w_override_dlls native,builtin qedit
 }
 
 #----------------------------------------------------------------
@@ -10105,6 +10135,7 @@ load_quartz()
 {
     helper_win7sp1 x86_microsoft-windows-directshow-core_31bf3856ad364e35_6.1.7601.17514_none_a877a1cc4c284497/quartz.dll
     w_try cp "$W_TMP/x86_microsoft-windows-directshow-core_31bf3856ad364e35_6.1.7601.17514_none_a877a1cc4c284497/quartz.dll" "$W_SYSTEM32_DLLS/quartz.dll"
+    w_override_dlls native,builtin quartz
     w_try_regsvr quartz.dll
 
     if [ "$W_ARCH" = "win64" ]; then
@@ -10112,8 +10143,6 @@ load_quartz()
         w_try cp "$W_TMP/amd64_microsoft-windows-directshow-core_31bf3856ad364e35_6.1.7601.17514_none_04963d500485b5cd/quartz.dll" "$W_SYSTEM64_DLLS/quartz.dll"
         w_try_regsvr64 quartz.dll
     fi
-
-    w_override_dlls native,builtin quartz
 }
 
 #----------------------------------------------------------------
