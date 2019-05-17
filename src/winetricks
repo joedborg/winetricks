@@ -404,7 +404,7 @@ w_try_7z()
     shift 2
 
     # Not always installed, use Windows 7-Zip as a fallback:
-    if test -x "$(command -v 7z 2>/dev/null)"; then
+    if [ -z "$WINETRICKS_FORCE_WIN_7Z" ] && [ -x "$(command -v 7z 2>/dev/null)" ] ; then
         w_try 7z x "$filename" -o"$destdir" "$@"
     else
         w_warn "Cannot find 7z.  Using Windows 7-Zip instead. (You can avoid this by installing 7z, e.g. 'sudo apt-get install p7zip-full' or 'sudo yum install p7zip-plugins')."
@@ -420,7 +420,7 @@ w_try_ar()
     # $2 - file to extract (optional)
 
     # Not always installed, use Windows 7-zip as a fallback:
-    if test -x "$(command -v ar 2>/dev/null)"; then
+    if [ -z "$WINETRICKS_FORCE_WIN_7Z" ] && [ -x "$(command -v ar 2>/dev/null)" ]; then
         w_try ar x "$@"
     else
         w_warn "Cannot find ar.  Using Windows 7-zip instead. (You can avoid this by installing binutils, e.g. 'sudo apt-get install binutils' or 'sudo yum install binutils')."
@@ -569,7 +569,7 @@ w_try_unrar()
     # $1 - zipfile to extract (keeping internal paths, in cwd)
 
     # Not always installed, use Windows 7-Zip as a fallback:
-    if test -x "$(command -v unrar 2>/dev/null)"; then
+    if [ -z "$WINETRICKS_FORCE_WIN_7Z" ] && [ -x "$(command -v unrar 2>/dev/null)" ]; then
         w_try unrar x "$@"
     else
         w_warn "Cannot find unrar.  Using Windows 7-Zip instead. (You can avoid this by installing unrar, e.g. 'sudo apt-get install unrar' or 'sudo yum install unrar')."
@@ -589,7 +589,7 @@ w_try_unzip()
     shift 2
 
     # Not always installed, use Windows 7-Zip as a fallback:
-    if test -x "$(command -v unzip 2>/dev/null)"; then
+    if [ -z "$WINETRICKS_FORCE_WIN_7Z" ] && [ -x "$(command -v unzip 2>/dev/null)" ]; then
         # FreeBSD ships unzip, but it doesn't support self-compressed executables
         # If it fails, fall back to 7-Zip:
         unzip -o -q -d"$destdir" "$zipfile" "$@"
@@ -10121,6 +10121,29 @@ load_ole32()
     helper_winxpsp3 i386/ole32.dl_
     w_try_cabextract --directory="$W_SYSTEM32_DLLS" "$W_TMP"/i386/ole32.dl_
     w_override_dlls native,builtin ole32
+}
+
+#----------------------------------------------------------------
+
+w_metadata oleaut32 dlls \
+    title="MS oleaut32.dll" \
+    publisher="Microsoft" \
+    year="2011" \
+    media="download" \
+    file1="../win7sp1/windows6.1-KB976932-X86.exe" \
+    installed_file1="$W_SYSTEM32_DLLS_WIN/oleaut32.dll"
+
+load_oleaut32()
+{
+    helper_win7sp1 x86_microsoft-windows-ole-automation_31bf3856ad364e35_6.1.7601.17514_none_bf07947959bc4c33/oleaut32.dll
+    w_try cp "$W_TMP/x86_microsoft-windows-ole-automation_31bf3856ad364e35_6.1.7601.17514_none_bf07947959bc4c33/oleaut32.dll" "$W_SYSTEM32_DLLS/oleaut32.dll"
+
+    if [ "$W_ARCH" = "win64" ]; then
+        helper_win7sp1_x64 amd64_microsoft-windows-ole-automation_31bf3856ad364e35_6.1.7601.17514_none_1b262ffd1219bd69/oleaut32.dll
+        w_try cp "$W_TMP/amd64_microsoft-windows-ole-automation_31bf3856ad364e35_6.1.7601.17514_none_1b262ffd1219bd69/oleaut32.dll" "$W_SYSTEM64_DLLS/oleaut32.dll"
+    fi
+
+    w_override_dlls native,builtin oleaut32
 }
 
 #----------------------------------------------------------------
