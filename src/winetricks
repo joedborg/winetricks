@@ -5631,6 +5631,18 @@ helper_win2ksp4()
     w_try_cabextract -d "$W_TMP" -L -F "$filename" "$W_CACHE"/win2ksp4/W2KSP4_EN.EXE
 }
 
+# Filelist at ./misc/filelists/winxpsp2_support_tools.txt
+helper_winxpsp2_support_tools()
+{
+    filename="$1"
+
+    # https://www.microsoft.com/en-us/download/details.aspx?id=18546
+    w_download_to winxpsp2_support_tools https://download.microsoft.com/download/d/3/8/d38066aa-4e37-4ae8-bce3-a4ce662b2024/WindowsXP-KB838079-SupportTools-ENU.exe 7927e87af616d2fb8d4ead0db0103eb845a4e6651b20a5bffea9eebc3035c24d
+
+    w_try_cabextract -d "$W_TMP" -L -F support.cab "$W_CACHE"/winxpsp2_support_tools/WindowsXP-KB838079-SupportTools-ENU.exe
+    w_try_cabextract -d "$W_TMP" -L -F "$filename" "$W_TMP"/support.cab
+}
+
 # Filelist at ./misc/filelists/winxpsp3.txt
 helper_winxpsp3()
 {
@@ -7799,7 +7811,16 @@ load_dotnet20()
         w_set_winver win2k
 
         w_try_cd "$W_CACHE"/"$W_PACKAGE"
-        w_try "$WINE" dotnetfx.exe ${W_OPT_UNATTENDED:+/q /c:"install.exe /q"}
+        "$WINE" dotnetfx.exe ${W_OPT_UNATTENDED:+/q /c:"install.exe /q"}
+        status=$?
+
+        case $status in
+            0) ;;
+            105) echo "exit status $status - normal, user selected 'restart now'" ;;
+            194) echo "exit status $status - normal, user selected 'restart later'" ;;
+            *) w_die "exit status $status - $W_PACKAGE installation failed" ;;
+        esac
+
         w_unset_winver
 
         # We can't stop installing dotnet20 in win2k mode until Wine supports
@@ -8863,6 +8884,21 @@ load_faudio()
     faudio_version="$(cat "${W_TMP_EARLY}/LATEST")"
     w_linkcheck_ignore=1 w_download "https://github.com/Kron4ek/FAudio-Builds/releases/download/${faudio_version}/faudio-${faudio_version}.tar.xz"
     helper_faudio "faudio-${faudio_version}.tar.xz"
+}
+
+#----------------------------------------------------------------
+
+w_metadata filever dlls \
+    title="Microsoft's filever, for dumping file version info" \
+    publisher="Microsoft" \
+    year="20??" \
+    media="download" \
+    installed_file1="$W_SYSTEM32_DLLS_WIN/filever.exe"
+
+load_filever()
+{
+    helper_winxpsp2_support_tools filever.exe
+    w_try cp "$W_TMP/filever.exe" "$W_SYSTEM32_DLLS/filever.exe"
 }
 
 #----------------------------------------------------------------
