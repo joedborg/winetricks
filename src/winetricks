@@ -28,24 +28,27 @@ WINETRICKS_VERSION=20190310-next
 # - wine is used to execute Win32 apps except on Cygwin.
 # - ar, cabextract, unrar, unzip, and 7z are needed by some verbs.
 # - aria2c, wget, curl, or fetch is needed for downloading.
+# - fuseiso, archivemount (Linux), or hdiutil (macOS) is used to mount .iso images.
+# - perl is used to munge steam config files.
+# - pkexec, sudo, or kdesu (gksu/gksudo/kdesudo are deprecated upstream but also still supported)
+#   are used to mount .iso images if the user cached them with -k option.
 # - sha256sum, sha256, or shasum (OSX 10.5 does not support these, 10.6+ is required):
 #   note: some legacy verbs may still use sha1sum, sha1, or shasum, but this is
 #   deprecated and will be removed in a future release.
-# - zenity is needed by the GUI, though it can limp along somewhat with kdialog/xmessage.
+# - torify is used with option "--torify" if sites are blocked in single countries.
 # - xdg-open (if present) or open (for OS X) is used to open download pages
 #   for the user when downloads cannot be fully automated.
-# - pkexec, sudo, or kdesu (gksu/gksudo/kdesudo are deprecated upstream but also still supported)
-#   are used to mount .iso images if the user cached them with -k option.
-# - fuseiso, archivemount (Linux), or hdiutil (macOS) is used to mount .iso images.
-# - perl is used to munge steam config files.
-# - torify is used with option "--torify" if sites are blocked in single countries.
+# - xz is used by some verbs to decompress tar archives.
+# - zenity is needed by the GUI, though it can limp along somewhat with kdialog/xmessage.
+#
 # On Ubuntu, the following lines can be used to install all the prerequisites:
 #    sudo add-apt-repository ppa:ubuntu-wine/ppa
 #    sudo apt-get update
-#    sudo apt-get install binutils cabextract p7zip-full unrar unzip wget wine zenity
+#    sudo apt-get install binutils cabextract fuseiso p7zip-full policykit tor unrar unzip wget wine xdg-utils xz-utils zenity
+#
 # On Fedora, these commands can be used (RPM Fusion is used to install unrar):
 #    sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
-#    sudo dnf install binutils cabextract p7zip-plugins unrar unzip wget wine zenity
+#    sudo dnf install binutils cabextract fuseiso p7zip-plugins polkit tor unrar unzip wget wine xdg-utils xz zenity
 #
 # See https://github.com/Winetricks/winetricks for documentation and tutorials,
 # including how to contribute changes to winetricks.
@@ -923,6 +926,7 @@ w_dotnet_verify()
         dotnet46) version="4.6" ;;
         dotnet461) version="4.6.1" ;;
         dotnet462) version="4.6.2" ;;
+        dotnet471) version="4.7.1" ;;
         dotnet472) version="4.7.2" ;;
         *) echo error ; exit 1 ;;
     esac
@@ -8675,6 +8679,55 @@ verify_dotnet462()
     w_dotnet_verify dotnet462
 }
 
+#----------------------------------------------------------------
+
+w_metadata dotnet471 dlls \
+    title="MS .NET 4.7.1" \
+    publisher="Microsoft" \
+    year="2017" \
+    media="download" \
+    file1="NDP471-KB4033342-x86-x64-AllOS-ENU.exe" \
+    conflicts="dotnet20sdk dotnet30sp1 vjrun20" \
+    installed_file1="c:/windows/dotnet471.installed.workaround"
+
+load_dotnet471()
+{
+    w_package_warn_win64
+
+    # https://www.microsoft.com/en-US/download/details.aspx?id=56116
+    w_download http://download.microsoft.com/download/9/E/6/9E63300C-0941-4B45-A0EC-0008F96DD480/NDP471-KB4033342-x86-x64-AllOS-ENU.exe 63dc850df091f3f137b5d4392f47917f847f8926dc8af1da9bfba6422e495805
+    unattended_args="/sfxlang:1027 /q /norestart"
+
+    w_call remove_mono
+
+    w_call dotnet462
+    w_set_winver win7
+
+    w_try_cd "$W_CACHE/$W_PACKAGE"
+
+    WINEDLLOVERRIDES=fusion=b "$WINE" "$file1" ${W_OPT_UNATTENDED:+$unattended_args}
+    status=$?
+
+    echo "exit status: $status"
+
+    case $status in
+        0) ;;
+        5) w_die "exit status $status - user selected 'Cancel'" ;;
+        105) echo "exit status $status - normal, user selected 'restart now'" ;;
+        194) echo "exit status $status - normal, user selected 'restart later'" ;;
+        *) w_die "exit status $status - $W_PACKAGE installation failed" ;;
+    esac
+
+    w_override_dlls native mscoree
+
+    # Do not rely on temporary files. As a workaround, touch a file instead so that we know it's been installed for list-installed
+    w_try touch "${W_WINDIR_UNIX}/dotnet471.installed.workaround"
+}
+
+verify_dotnet471()
+{
+    w_dotnet_verify dotnet471
+}
 
 #----------------------------------------------------------------
 
@@ -8690,7 +8743,7 @@ load_dotnet472()
 {
     w_package_warn_win64
 
-    if w_workaround_wine_bug 42170 "Running un-official repacked .NET 4.7.2 setup until the official version is fixed."; then
+    if w_workaround_wine_bug 42170 "Running un-official repacked .NET 4.7.2 setup until the official version is fixed.", 3.1; then
         # Un-official slim version. See https://repacks.net/forum/viewtopic.php?t=7
         file_package="dotNetFx472_Full_x86_x64_Slim.exe"
         w_download "https://drive.google.com/uc?export=download&id=1aLBCH0Yt2-6ROpWRBxZ01kqGMyhc_8hM&confirm" a36da041b8f46079f8e16647312d642953cde520f4a600ad5b3f4f90a23495a7 $file_package
@@ -15797,56 +15850,6 @@ load_acreedbro()
             send {Enter}
         }
         WinWaitClose
-    "
-}
-
-#----------------------------------------------------------------
-
-w_metadata atmosphir games \
-    title="Atmosphir" \
-    publisher="Minor Studios" \
-    year="2011" \
-    media="manual_download" \
-    file1="Atmosphir Installer v1.0.0 fixed.exe" \
-    installed_exe1="$W_PROGRAMS_X86_WIN/Minor Studios/Atmosphir/Atmosphir.exe" \
-    homepage="http://www.atmosphir.com"
-
-load_atmosphir()
-{
-    w_download_manual https://download.cnet.com/Atmosphir/3000-7492_4-75335647.html atmosphir-installer-v1.0.2.exe a6b2c82a98d750014874f8ab445b38ebb127450e5a7a9350832cf3a8d3a
-
-    w_try_cd "$W_CACHE/$W_PACKAGE"
-    w_ahk_do "
-        run Atmosphir Installer v1.0.0 fixed.exe
-        winwait, Atmosphir Setup, Welcome
-        if ( w_opt_unattended > 0 ) {
-            sleep 1000
-            ControlClick Button2
-            winwait, Atmosphir Setup, License Agreement
-            sleep 1000
-            ControlClick Button2
-            winwait, Atmosphir Setup, Choose Install Location
-            sleep 1000
-            ControlClick Button2
-            winwait, Atmosphir Setup, Choose Start Menu Folder
-            sleep 1000
-            ControlClick Button2
-        }
-        winwait, Atmosphir Setup, Installation complete
-        if ( w_opt_unattended > 0 ) {
-            sleep 1000
-            send {Space}  ; ControlClick Button4    # start
-            sleep 1000
-            ControlClick Button2
-            ; Let the launcher do the initial full download
-            winwait, Atmosphir Launcher
-            winwaitclose
-            ; then kill the game when it starts
-            winwait, Atmosphir
-            ;winkill          ; doesn't work, game traps it
-            winclose
-        }
-        winwaitclose
     "
 }
 
