@@ -928,6 +928,7 @@ w_dotnet_verify()
         dotnet462) version="4.6.2" ;;
         dotnet471) version="4.7.1" ;;
         dotnet472) version="4.7.2" ;;
+        dotnet48) version="4.8" ;;
         *) echo error ; exit 1 ;;
     esac
             w_call dotnet_verifier
@@ -7779,7 +7780,7 @@ w_metadata dotnet11 dlls \
     publisher="Microsoft" \
     year="2003" \
     media="download" \
-    conflicts="dotnet20 dotnet20sdk dotnet20sp1 dotnet20sp2 dotnet30 dotnet30sp1 dotnet35 dotnet35sp1 vjrun20" \
+    conflicts="dotnet20sdk" \
     file1="dotnetfx.exe" \
     installed_file1="c:/windows/Microsoft.NET/Framework/v1.1.4322/ndpsetup.ico"
 
@@ -7892,7 +7893,7 @@ w_metadata dotnet20 dlls \
     publisher="Microsoft" \
     year="2006" \
     media="download" \
-    conflicts="dotnet11" \
+    conflicts="dotnet20sp1 dotnet20sp2 dotnet30sp1 dotnet35" \
     file1="dotnetfx.exe" \
     installed_file1="c:/windows/Microsoft.NET/Framework/v2.0.50727/MSBuild.exe"
 
@@ -7908,9 +7909,36 @@ load_dotnet20()
         # Needed for https://bugs.winehq.org/show_bug.cgi?id=12401
         w_set_winver win2k
 
-        w_try_cd "$W_CACHE"/"$W_PACKAGE"
-        "$WINE" dotnetfx.exe ${W_OPT_UNATTENDED:+/q /c:"install.exe /q"}
-        status=$?
+        # if dotnet11 if installed there is a warning dialog, but it still verifies
+        # dotnet11 doesn't work on 64-bit, so no need to run there
+        w_try_cd "$W_CACHE/$W_PACKAGE"
+        if [ -n "${W_OPT_UNATTENDED}" ]; then
+            w_ahk_do "
+                SetTitleMatchMode, 2
+                ; FIXME: this isn't silent?
+                run, dotnetfx.exe /q /c:\"install.exe /q\"
+
+                Loop
+                {
+                    sleep 1000
+                    ifwinexist, .NET Framework Initialization Error
+                    {
+                        WinClose, .NET Framework Initialization Error
+                        continue
+                    }
+
+                    Process, exist, dotnetfx.exe
+                    dotnet_pid = %ErrorLevel%
+                    if dotnet_pid = 0
+                    {
+                        break
+                    }
+                }
+            "
+        else
+            "$WINE" dotnetfx.exe ${W_OPT_UNATTENDED:+/q /c:"install.exe /q"}
+            status=$?
+        fi
 
         case $status in
             0) ;;
@@ -8018,13 +8046,13 @@ load_dotnet20sdk()
 #----------------------------------------------------------------
 
 w_metadata dotnet20sp1 dlls \
-    title="MS .NET 2.0 SP1 (experimental)" \
+    title="MS .NET 2.0 SP1" \
     publisher="Microsoft" \
     year="2008" \
     media="download" \
-    conflicts="dotnet11 dotnet20sp2 dotnet35sp1" \
+    conflicts="dotnet20sp2" \
     file1="NetFx20SP1_x86.exe" \
-    installed_file1="c:/windows/winsxs/manifests/x86_Microsoft.VC80.CRT_1fc8b3b9a1e18e3b_8.0.50727.1433_x-ww_5cf844d2.cat"
+    installed_file1="c:/windows/dotnet20sp1.installed.workaround"
 
 load_dotnet20sp1()
 {
@@ -8074,6 +8102,9 @@ load_dotnet20sp1()
     w_unset_winver
 
     W_NGEN_CMD="w_try $WINE $W_DRIVE_C/windows/Microsoft.NET/Framework/v2.0.50727/ngen.exe executequeueditems"
+
+    # Installs the same file(name)s as dotnet35sp1, let users install dotnet35sp1 after dotnet20sp1
+    w_try touch "${W_WINDIR_UNIX}/dotnet20sp1.installed.workaround"
 }
 
 verify_dotnet20sp1()
@@ -8084,7 +8115,7 @@ verify_dotnet20sp1()
 #----------------------------------------------------------------
 
 w_metadata dotnet20sp2 dlls \
-    title="MS .NET 2.0 SP2 (experimental)" \
+    title="MS .NET 2.0 SP2" \
     publisher="Microsoft" \
     year="2009" \
     media="download" \
@@ -8150,7 +8181,7 @@ w_metadata dotnet30 dlls \
     publisher="Microsoft" \
     year="2006" \
     media="download" \
-    conflicts="dotnet11 dotnet20sp1 dotnet20sp2 dotnet30sp1 dotnet35 dotnet35sp1 dotnet45 dotnet452" \
+    conflicts="dotnet11 dotnet30sp1 dotnet35 dotnet35sp1" \
     file1="dotnetfx3.exe" \
     installed_file1="c:/windows/Microsoft.NET/Framework/v3.0/Microsoft .NET Framework 3.0/logo.bmp"
 
@@ -8221,7 +8252,7 @@ w_metadata dotnet30sp1 dlls \
     publisher="Microsoft" \
     year="2007" \
     media="download" \
-    conflicts="dotnet11 dotnet20sdk dotnet20sp1 dotnet20sp2" \
+    conflicts="dotnet11 dotnet20sdk" \
     file1="NetFx30SP1_x86.exe" \
     installed_file1="c:/windows/system32/XpsFilt.dll"    # we're cheating a bit here
 
@@ -8275,7 +8306,7 @@ w_metadata dotnet35 dlls \
     publisher="Microsoft" \
     year="2007" \
     media="download" \
-    conflicts="dotnet11 dotnet20 dotnet20sdk dotnet20sp1 dotnet20sp2" \
+    conflicts="dotnet11 dotnet20sdk dotnet20sp2 dotnet30" \
     file1="dotnetfx35.exe" \
     installed_file1="c:/windows/Microsoft.NET/Framework/v3.5/MSBuild.exe"
 
@@ -8329,7 +8360,7 @@ w_metadata dotnet35sp1 dlls \
     publisher="Microsoft" \
     year="2008" \
     media="download" \
-    conflicts="dotnet11 dotnet20sp1 dotnet20sp2" \
+    conflicts="dotnet11 dotnet20sp1" \
     file1="dotnetfx35.exe" \
     installed_file1="c:/windows/Microsoft.NET/Framework/v3.5/msbuild.exe.config"
 
@@ -8430,7 +8461,7 @@ w_metadata dotnet45 dlls \
     publisher="Microsoft" \
     year="2012" \
     media="download" \
-    conflicts="dotnet20 dotnet20sdk dotnet20sp1 dotnet20sp2 dotnet35sp1 vjrun20" \
+    conflicts="dotnet20sdk" \
     file1="dotnetfx45_full_x86_x64.exe" \
     installed_file1="c:/windows/Microsoft.NET/Framework/v4.0.30319/Microsoft.Windows.ApplicationServer.Applications.45.man"
 
@@ -8482,7 +8513,7 @@ w_metadata dotnet452 dlls \
     publisher="Microsoft" \
     year="2012" \
     media="download" \
-    conflicts="dotnet20 dotnet20sdk dotnet20sp1 dotnet20sp2 dotnet35sp1 dotnet40 dotnet45 vjrun20" \
+    conflicts="dotnet20sdk dotnet46 dotnet462" \
     file1="dotnetfx45_full_x86_x64.exe" \
     installed_file1="c:/windows/Microsoft.NET/Framework/v4.0.30319/Microsoft.Windows.ApplicationServer.Applications.45.man"
 
@@ -8535,7 +8566,7 @@ w_metadata dotnet46 dlls \
     year="2015" \
     media="download" \
     file1="NDP46-KB3045557-x86-x64-AllOS-ENU.exe" \
-    conflicts="dotnet20 dotnet20sdk dotnet20sp1 dotnet20sp2 dotnet35sp1 vjrun20" \
+    conflicts="dotnet20sdk" \
     installed_file1="c:/windows/Migration/WTR/netfx45_upgradecleanup.inf"
 
 load_dotnet46()
@@ -8589,7 +8620,7 @@ w_metadata dotnet461 dlls \
     year="2015" \
     media="download" \
     file1="NDP461-KB3102436-x86-x64-AllOS-ENU.exe" \
-    conflicts="dotnet20 dotnet20sdk dotnet20sp1 dotnet20sp2 dotnet35sp1 dotnet46 vjrun20" \
+    conflicts="dotnet20sdk" \
     installed_file1="c:/windows/dotnet461.installed.workaround"
 
 load_dotnet461()
@@ -8636,7 +8667,7 @@ w_metadata dotnet462 dlls \
     publisher="Microsoft" \
     year="2016" \
     media="download" \
-    conflicts="dotnet20sdk dotnet20sp1 dotnet20sp2 dotnet35sp1 dotnet46 dotnet461 vjrun20" \
+    conflicts="dotnet20sdk" \
     installed_file1="c:/windows/dotnet462.installed.workaround"
 
 load_dotnet462()
@@ -8688,7 +8719,7 @@ w_metadata dotnet471 dlls \
     year="2017" \
     media="download" \
     file1="NDP471-KB4033342-x86-x64-AllOS-ENU.exe" \
-    conflicts="dotnet20sdk dotnet30sp1 vjrun20" \
+    conflicts="dotnet20sdk dotnet30sp1" \
     installed_file1="c:/windows/dotnet471.installed.workaround"
 
 load_dotnet471()
@@ -8737,7 +8768,7 @@ w_metadata dotnet472 dlls \
     publisher="Microsoft" \
     year="2018" \
     media="download" \
-    conflicts="dotnet20 dotnet20sdk dotnet20sp1 dotnet20sp2 dotnet35sp1 dotnet40 dotnet46 dotnet461 dotnet462 vjrun20" \
+    conflicts="dotnet20sdk" \
     installed_file1="c:/windows/dotnet472.installed.workaround"
 
 load_dotnet472()
@@ -8785,6 +8816,56 @@ load_dotnet472()
 verify_dotnet472()
 {
     w_dotnet_verify dotnet472
+}
+
+#----------------------------------------------------------------
+
+w_metadata dotnet48 dlls \
+    title="MS .NET 4.8" \
+    publisher="Microsoft" \
+    year="2019" \
+    media="download" \
+    file1="ndp48-x86-x64-allos-enu.exe" \
+    conflicts="dotnet20sdk" \
+    installed_file1="c:/windows/dotnet48.installed.workaround"
+
+load_dotnet48()
+{
+    w_package_warn_win64
+
+    # Official version. See https://dotnet.microsoft.com/download/dotnet-framework/net48
+    w_download https://download.visualstudio.microsoft.com/download/pr/7afca223-55d2-470a-8edc-6a1739ae3252/abd170b4b0ec15ad0222a809b761a036/ndp48-x86-x64-allos-enu.exe 95889d6de3f2070c07790ad6cf2000d33d9a1bdfc6a381725ab82ab1c314fd53
+    unattended_args="/sfxlang:1027 /q /norestart"
+
+    w_call remove_mono
+
+    w_call dotnet40
+    w_set_winver win7
+
+    w_try_cd "$W_CACHE/$W_PACKAGE"
+
+    WINEDLLOVERRIDES=fusion=b "$WINE" "$file1" ${W_OPT_UNATTENDED:+$unattended_args}
+    status=$?
+
+    echo "exit status: $status"
+
+    case $status in
+        0) ;;
+        5) w_die "exit status $status - user selected 'Cancel'" ;;
+        105) echo "exit status $status - normal, user selected 'restart now'" ;;
+        194) echo "exit status $status - normal, user selected 'restart later'" ;;
+        *) w_die "exit status $status - $W_PACKAGE installation failed" ;;
+    esac
+
+    w_override_dlls native mscoree
+
+    # Do not rely on temporary files. As a workaround, touch a file instead so that we know it's been installed for list-installed
+    w_try touch "${W_WINDIR_UNIX}/dotnet48.installed.workaround"
+}
+
+verify_dotnet48()
+{
+    w_dotnet_verify dotnet48
 }
 
 #----------------------------------------------------------------
@@ -11504,7 +11585,6 @@ w_metadata vjrun20 dlls \
     publisher="Microsoft" \
     year="2007" \
     media="download" \
-    conflicts="dotnet11 dotnet20sp1 dotnet20sp2" \
     file1="vjredist.exe" \
     installed_file1="c:/windows/Microsoft.NET/Framework/VJSharp/VJSharpSxS10.dll"
 
@@ -13330,8 +13410,9 @@ w_metadata fontxplorer apps \
 
 load_fontxplorer()
 {
-    w_download http://www.moonsoftware.com/files/legacy/Font_Xplorer_122_Free.exe e3a53841c133e2ecfeb75c7ea277e23011317bb031f8caf423b7e9b7f92d85e0
-
+    # 2011/05/15: http://www.moonsoftware.com/files/legacy/Font_Xplorer_122_Free.exe e3a53841c133e2ecfeb75c7ea277e23011317bb031f8caf423b7e9b7f92d85e0
+    # 2019/06/14: http://www.moonsoftware.com/files/legacy/Font_Xplorer_122_Free.exe is dead
+    w_download https://web.archive.org/web/20190217101943/http://www.moonsoftware.com/files/legacy/Font_Xplorer_122_Free.exe e3a53841c133e2ecfeb75c7ea277e23011317bb031f8caf423b7e9b7f92d85e0
     w_try_cd "$W_CACHE/fontxplorer"
     w_try "$WINE" Font_Xplorer_122_Free.exe $W_UNATTENDED_SLASH_S
     w_killall "explorer.exe"
@@ -14403,21 +14484,22 @@ w_metadata openwatcom apps \
 load_openwatcom()
 {
     # 2016/03/11: upstream http://www.openwatcom.org appears to be dead (404)
-    w_download ftp://ftp.openwatcom.org/install/open-watcom-c-win32-1.9.exe 040c910aba304fdb5f39b8fe508cd3c772b1da1f91a58179fa0895e0b2bf190b
+    # 2019/06/14: now at https://sourceforge.net/projects/openwatcom/files/open-watcom-1.9/open-watcom-c-win32-1.9.exe/download
+    w_download https://sourceforge.net/projects/openwatcom/files/open-watcom-1.9/open-watcom-c-win32-1.9.exe 040c910aba304fdb5f39b8fe508cd3c772b1da1f91a58179fa0895e0b2bf190b
 
     if [ -n "$W_UNATTENDED_SLASH_Q" ]; then
         # Options documented at http://bugzilla.openwatcom.org/show_bug.cgi?id=898
         # But they don't seem to work on Wine, so jam them into setup.inf
         # Pick smallest installation that supports 16-bit C and C++
         w_try_cd "$W_TMP"
-        cp "$W_CACHE"/openwatcom/open-watcom-c-win32-1.9.exe .
-        w_try_unzip . open-watcom-c-win32-1.9.exe setup.inf
+        cp "$W_CACHE/${W_PACKAGE}/${file1}" .
+        w_try_unzip . "${file1}" setup.inf
         sed -i 's/tools16=.*/tools16=true/' setup.inf
-        w_try zip -f open-watcom-c-win32-1.9.exe
-        w_try "$WINE" open-watcom-c-win32-1.9.exe -s
+        w_try zip -f "${file1}"
+        w_try "$WINE" "${file1}" -s
     else
         w_try_cd "$W_CACHE/$W_PACKAGE"
-        w_try "$WINE" open-watcom-c-win32-1.9.exe
+        w_try "$WINE" "${file1}"
     fi
 
     if test ! -f "$W_DRIVE_C"/WATCOM/binnt/wcc.exe; then
@@ -18066,12 +18148,12 @@ load_lhp_demo()
             ;;
     esac
 
-    w_download_manual "https://www.fileplanet.com/213663/210000/fileinfo/LEGO-Harry-Potter:-Years-1-4-Demo" 01d8e88511d71f5dd1492034ea4b00eacdbbf891ef23cffa31413d232eee3647
+    w_download_manual "https://www.fileplanet.com/213663/210000/fileinfo/LEGO-Harry-Potter:-Years-1-4-Demo" "$file1" 01d8e88511d71f5dd1492034ea4b00eacdbbf891ef23cffa31413d232eee3647
 
     w_try_cd "$W_CACHE/$W_PACKAGE"
     w_ahk_do "
         SetTitleMatchMode, 2
-        run, LEGOHarryPotterDEMO.exe
+        run, $file1
         winwait, LEGO, language
         if ( w_opt_unattended > 0 ) {
             controlclick, Button1
