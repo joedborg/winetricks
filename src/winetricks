@@ -7506,6 +7506,26 @@ load_dxvk133()
     helper_dxvk_d9vk "$file1" "4.5" "1.1.113" "dxgi,d3d10,d3d11"
 }
 
+w_metadata dxvk134 dlls \
+    title="Vulkan-based D3D10/D3D11 implementation for Linux / Wine (1.3.4)" \
+    publisher="Philip Rebohle" \
+    year="2017" \
+    media="download" \
+    file1="dxvk-1.3.4.tar.gz" \
+    installed_file1="$W_SYSTEM32_DLLS_WIN/d3d10.dll" \
+    installed_file2="$W_SYSTEM32_DLLS_WIN/d3d10_1.dll" \
+    installed_file3="$W_SYSTEM32_DLLS_WIN/d3d10core.dll" \
+    installed_file4="$W_SYSTEM32_DLLS_WIN/d3d11.dll" \
+    installed_file5="$W_SYSTEM32_DLLS_WIN/dxgi.dll"
+
+load_dxvk134()
+{
+    # https://github.com/doitsujin/dxvk
+    w_download "https://github.com/doitsujin/dxvk/releases/download/v1.3.4/dxvk-1.3.4.tar.gz" 4683e2ad4221b16572b0d939da5a05ab9a16b2b62c2f4e0c8bf3b2cdb27918ff
+    # FIXME: The current Wine release (4.15) does not include the latest Vulkan 1.1.113 headers.
+    helper_dxvk_d9vk "$file1" "4.5" "1.1.113" "dxgi,d3d10,d3d11"
+}
+
 
 #----------------------------------------------------------------
 
@@ -13668,6 +13688,8 @@ load_irfanview()
             Sleep 900
             ControlClick, Button7 ; Uncheck All
             Sleep 900
+            ControlClick, Button4 ; Create start menu icons
+            Sleep 900
             ControlClick, Button11 ; Next
             Sleep 900
             winwait, Setup, version
@@ -14671,7 +14693,7 @@ w_metadata protectionid apps \
 
 load_protectionid()
 {
-    w_download_manual "https://pid.gamecopyworld.com/" ProtectionId.685.December.2016.rar 27a84d740c9fb96cc866438a2b5cd4afc350affc8b7a0122c28c651af3559aea
+    w_download "https://web.archive.org/web/20181209123344/https://pid.wiretarget.com/?f=ProtectionId.685.December.2016.rar" 27a84d740c9fb96cc866438a2b5cd4afc350affc8b7a0122c28c651af3559aea ProtectionId.685.December.2016.rar
     w_try_cd "$W_SYSTEM32_DLLS"
     w_try_unrar "${W_CACHE}/${W_PACKAGE}/${file1}"
 
@@ -21693,7 +21715,7 @@ execute_command()
         glsl-enable) w_warn "Calling glsl-enable is deprecated, please use glsl=enabled instead" ; w_call glsl=enabled ;;
         ie6_full) w_warn "Calling ie6_full is deprecated, please use ie6 instead" ; w_call ie6 ;;
         # FIXME: use wsh57 instead?
-        jscript) w_warn "Calling jscript is deprecated, please use wsh56js instead" ; w_call wsh56js ;;
+        jscript) w_warn "Calling jscript is deprecated, please use wsh57 instead" ; w_call wsh57 ;;
         npm-repack) w_warn "Calling npm-repack is deprecated, please use npm=repack instead" ; w_call npm=repack ;;
         oss) w_warn "Calling oss is deprecated, please use sound=oss instead" ; w_call sound=oss ;;
         python) w_warn "Calling python is deprecated, please use python26 instead" ; w_call python26 ;;
