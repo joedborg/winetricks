@@ -96,6 +96,10 @@ BLACKLIST="$BLACKLIST|xmllite"
 BLACKLIST="$BLACKLIST|allcodecs|allfonts|cjkfonts|pptfonts"
 # https://bugs.winehq.org/show_bug.cgi?id=16876
 BLACKLIST="$BLACKLIST|wmi"
+# These break in combination with sandbox, https://bugs.winehq.org/show_bug.cgi?id=49421
+BLACKLIST="$BLACKLIST|ffdshow|python26|python27"
+# Also sandbox, but different bug, https://bugs.winehq.org/show_bug.cgi?id=49550
+BLACKLIST="$BLACKLIST|dirac"
 
 # Travis CI is apparently blocking archive.org, which breaks several verbs:
 # https://github.com/travis-ci/travis-ci/issues/6798
@@ -142,19 +146,28 @@ fail()
     failed_verbs="${failed_verbs}|$*"
     errors=$((errors + 1))
     w_prefix_failed=1
+    status
 }
 
 pass()
 {
     echo "PASS: $*"
     passes=$((passes + 1))
+    status
 }
 
 skip()
 {
     echo "SKIP: $*"
+    skipped_verbs="${skipped_verbs}|$*"
     skips=$((skips + 1))
     was_skipped=1
+    status
+}
+
+status()
+{
+    echo "Test in progress. Current status: $errors failures, $passes successes, $skips skipped."
 }
 
 w_die()
@@ -966,18 +979,42 @@ echo "Test over, $errors failures, $passes successes, $skips skipped."
 echo $result
 if [ $errors = 0 ] && [ $passes -gt 0 ] ; then
     echo "==============================================================="
-    exit 0
+    status=0
 else
-    echo "Test failures:"
+    echo "==============================================================="
+
     oldifs="$IFS"
     IFS="|"
+
+    echo "Test failures:"
     for test_failure in $failed_verbs; do
         if [ -z "$test_failure" ]; then
             :
         fi
         echo "$test_failure"
     done
+    echo
+
     IFS=$oldifs
-    echo "==============================================================="
-    exit 1
+    status=1
 fi
+
+# skips
+if [ $errors = 0 ] && [ $passes -gt 0 ] ; then
+    echo "==============================================================="
+    oldifs="$IFS"
+    IFS="|"
+
+    echo "Skipped tests:"
+    for skipped_test in $skipped_verbs; do
+        if [ -z "$skipped_test" ]; then
+            :
+        fi
+        echo "$skipped_test"
+    done
+
+    IFS=$oldifs
+fi
+
+echo "==============================================================="
+exit $status
