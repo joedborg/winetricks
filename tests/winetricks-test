@@ -374,7 +374,7 @@ test_app()
                 fi
 
                 # no xvfb needed
-                "${shwinetricks}" -q list-installed > "${outputdir}/list-installed.out"
+                DISPLAY="" "${shwinetricks}" -q list-installed > "${outputdir}/list-installed.out"
 
                 if ! grep -w "$app" "${outputdir}/list-installed.out"; then
                     fail "test app $app not installed after install?"
@@ -409,6 +409,12 @@ test_command()
     # will be set by fail() if a prefix has a failure, so that w_remove_prefix() doesn't remove the prefix
     unset w_prefix_failed
 
+    # Hate to hardcode this, but not a good way to set it from the winetricks side:
+    case "$command" in
+        "--verify bad") EXPECT_FAIL="yes";;
+        *) :;;
+    esac
+
     # If _W_wine_not_needed is set, don't fail if wine is missing (used by test_listing())
 
     # This previously changed spaces to hyphens. Going back to spaces so we test WINEPREFIXes
@@ -424,12 +430,17 @@ test_command()
     # Isolate us from the user's home directory
     # shellcheck disable=SC2086
     if [ -z "$_W_wine_not_needed" ]; then
+        # First, make the prefix (without $DISPLAY set).
+        # This reduces the amount of GUI activity (unless the prefix actually makes a window, which most tests don't).
+        DISPLAY="" "$WINE" wineboot || fail "\'$WINE wineboot\' failed"
+        "$WINESERVER" -w
+
         $XVFB $WINETRICKS sandbox || fail "\'$XVFB $WINETRICKS sandbox\' failed"
         echo "Installing $command"
         $XVFB $WINETRICKS --no-isolate -q nocrashdialog "$@"
         return=$?
     else
-        $XVFB $WINETRICKS --no-isolate -q "$@"
+        DISPLAY="" $XVFB $WINETRICKS --no-isolate -q "$@"
         return=$?
     fi
 
@@ -476,7 +487,7 @@ test_command()
         seconds=$(awk '/real/ {print $2}' < time.log | sed 's/\..*//')
     fi
 
-    echo "test_app: ${app}: install_time $seconds seconds."
+    echo "test_command: ${app}: install_time $seconds seconds."
 
     echo "Checking for dangling processes!"
     # shellcheck disable=SC2009
@@ -488,6 +499,8 @@ test_command()
     fi
 
     w_remove_prefix
+
+    unset EXPECT_FAIL
 }
 
 test_custom_verbs()
@@ -610,30 +623,37 @@ _EOF
     pass
 }
 
-test_dlls()
+test_category()
 {
+    # Test everything list in a particular category (i.e., dlls/fonts/settings/etc.)
+    category="$1"
+
+    if [ -z "$1" ]; then
+        fail "You must specify a category to test. I.e., one of: $(winetricks list | tr '\n' ' ')"
+    fi
+
     # no xvfb needed, kcov breaks
     "${shwinetricks}" list-manual-download > "${outputdir}/manual.log"
-    "${shwinetricks}" dlls list | awk '{print $1}' > "${outputdir}/dlls.log"
-    if grep .------------------- "${outputdir}/dlls.log" ; then
-        fail "output of dlls list contained garbage"
+    "${shwinetricks}" "${category}" list | awk '{print $1}' > "${outputdir}/${category}.log"
+    if grep .------------------- "${outputdir}/${category}.log" ; then
+        fail "output of ${category} list contained garbage"
         exit 1
     fi
 
-    sort -u < "${outputdir}/dlls.log" | grep -F -w -v -f "${outputdir}/manual.log" | grep -E -v "$BLACKLIST" > "${outputdir}/dlls.verbs"
+    sort -u < "${outputdir}/${category}.log" | grep -F -w -v -f "${outputdir}/manual.log" | grep -E -v "$BLACKLIST" > "${outputdir}/${category}.verbs"
 
-    if [ ! -f "${outputdir}/dlls.verbs" ] ; then
-        w_die "${outputdir}/dlls.verbs doesn't exist? No verbs to test!"
-    elif [ -f "${outputdir}/dlls.verbs" ] && [ ! -s "${outputdir}/dlls.verbs" ] ; then
-        w_die "${outputdir}/dlls.verbs exists, but it is empty"
+    if [ ! -f "${outputdir}/${category}.verbs" ] ; then
+        w_die "${outputdir}/${category}.verbs doesn't exist? No verbs to test!"
+    elif [ -f "${outputdir}/${category}.verbs" ] && [ ! -s "${outputdir}/${category}.verbs" ] ; then
+        w_die "${outputdir}/${category}.verbs exists, but it is empty"
     else
         echo "Testing these verbs:"
-        cat "${outputdir}/dlls.verbs"
+        cat "${outputdir}/${category}.verbs"
     fi
 
     while IFS= read -r line; do
         test_app "$line"
-    done < "${outputdir}/dlls.verbs"
+    done < "${outputdir}/${category}.verbs"
 }
 
 test_dotnet()
@@ -775,7 +795,7 @@ test_quick()
     export W_CACHE="$cache"
 
     # And test all the automatically-downloadable dlls
-    test_dlls
+    test_category dlls
 
     # And win32 7zip fallback
     test_7zip
@@ -789,6 +809,8 @@ test_quick()
 
 test_full() {
     test_quick
+    test_category fonts
+    test_category settings
     test_dotnet
     test_speed list
     test_speed list-download
@@ -809,7 +831,9 @@ test_xvfb() {
 
     # Not test_quick() since flash fails without proper X, but test_quick() doesn't respect $BLACKLIST
     # Also, we don't really want to duplicate those tests twice, as this is for TravisCI where time is limited..
-    test_dlls
+    test_category dlls
+    test_category fonts
+    test_category settings
 }
 
 helper_test_w_compare_wine_version()
