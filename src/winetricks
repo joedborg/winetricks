@@ -5817,7 +5817,8 @@ helper_win2ksp4()
     # Mirror list at http://www.filewatcher.com/m/w2ksp4_en.exe.135477136-0.html
     # This URL doesn't need rename from w2ksp4_en.exe to W2KSP4_EN.EXE
     # to avoid users having to redownload for a file rename
-    w_download_to win2ksp4 https://ftp.gnome.org/mirror/archive/ftp.sunet.se/pub/security/vendor/microsoft/win2000/Service_Packs/usa/W2KSP4_EN.EXE 167bb78d4adc957cc39fb4902517e1f32b1e62092353be5f8fb9ee647642de7e
+    # 2020/12/09: https://ftp.gnome.org/mirror/archive/ftp.sunet.se/pub/security/vendor/microsoft/win2000/Service_Packs/usa/W2KSP4_EN.EXE
+    w_download_to win2ksp4 http://x3270.bgp.nu/download/specials/W2KSP4_EN.EXE 167bb78d4adc957cc39fb4902517e1f32b1e62092353be5f8fb9ee647642de7e
     w_try_cabextract -d "${W_TMP}" -L -F "${filename}" "${W_CACHE}"/win2ksp4/W2KSP4_EN.EXE
 }
 
@@ -5850,7 +5851,8 @@ helper_winxpsp3()
     # https://download.microsoft.com/download/d/3/0/d30e32d8-418a-469d-b600-f32ce3edf42d/WindowsXP-KB936929-SP3-x86-ENU.exe
     # Mirror list: http://www.filewatcher.com/m/WindowsXP-KB936929-SP3-x86-ENU.exe.331805736-0.html
     # 2018/04/04: http://www.download.windowsupdate.com/msdownload/update/software/dflt/2008/04/windowsxp-kb936929-sp3-x86-enu_c81472f7eeea2eca421e116cd4c03e2300ebfde4.exe
-    w_download_to winxpsp3 https://ftp.gnome.org/mirror/archive/ftp.sunet.se/pub/security/vendor/microsoft/winxp/Service_Packs/WindowsXP-KB936929-SP3-x86-ENU.exe 62e524a552db9f6fd22d469010ea4d7e28ee06fa615a1c34362129f808916654
+    # 2020/12/09: https://ftp.gnome.org/mirror/archive/ftp.sunet.se/pub/security/vendor/microsoft/winxp/Service_Packs/WindowsXP-KB936929-SP3-x86-ENU.exe
+    w_download_to winxpsp3 http://www.download.windowsupdate.com/msdownload/update/software/dflt/2008/04/windowsxp-kb936929-sp3-x86-enu_c81472f7eeea2eca421e116cd4c03e2300ebfde4.exe 62e524a552db9f6fd22d469010ea4d7e28ee06fa615a1c34362129f808916654
 
     w_try_cabextract -d "${W_TMP}" -L -F "${filename}" "${W_CACHE}"/winxpsp3/WindowsXP-KB936929-SP3-x86-ENU.exe
 }
