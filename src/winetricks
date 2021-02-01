@@ -5755,7 +5755,8 @@ helper_directx_dl()
     # https://www.microsoft.com/en-us/download/details.aspx?id=9033
     # FIXME: none of the verbs that use this will show download status right
     # until file1 metadata is extended to handle common cache dir
-    w_download_to directx9 https://download.microsoft.com/download/E/E/1/EE17FF74-6C45-4575-9CF4-7FC2597ACD18/directx_feb2010_redist.exe f6d191e89a963d7cca34f169d30f49eab99c1ed3bb92da73ec43617caaa1e93f
+    # 2021/01/28: https://download.microsoft.com/download/E/E/1/EE17FF74-6C45-4575-9CF4-7FC2597ACD18/directx_feb2010_redist.exe
+    w_download_to directx9 https://files.holarse-linuxgaming.de/mirrors/microsoft/directx_feb2010_redist.exe f6d191e89a963d7cca34f169d30f49eab99c1ed3bb92da73ec43617caaa1e93f
 
     DIRECTX_NAME=directx_feb2010_redist.exe
 }
@@ -5765,7 +5766,8 @@ helper_directx_Jun2010()
 {
     # June 2010 DirectX 9c User Redistributable
     # https://www.microsoft.com/en-us/download/details.aspx?id=8109
-    w_download_to directx9 https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe
+    # 2021/01/28: https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe
+    w_download_to directx9 https://files.holarse-linuxgaming.de/mirrors/microsoft/directx_Jun2010_redist.exe 8746ee1a84a083a90e37899d71d50d5c7c015e69688a466aa80447f011780c0d
 
     DIRECTX_NAME=directx_Jun2010_redist.exe
 }
@@ -22078,7 +22080,7 @@ winetricks_set_wined3d_var()
         enable*) arg=enabled;;
         hard*) arg=hardware;;
         repack) arg=repack;;
-        backbuffer|fbo|gdi|none|opengl|readdraw|readtex|texdraw|textex|auto) arg=$2;;
+        backbuffer|fbo|gdi|gl|no3d|none|readdraw|readtex|texdraw|textex|vulkan|auto) arg=$2;;
         [0-9]*) arg=$2;;
         *) w_die "illegal value $2 for $1";;
     esac
@@ -22154,24 +22156,6 @@ _EOF_
 
 #----------------------------------------------------------------
 # DirectDraw settings
-
-w_metadata ddr=gdi settings \
-    title_uk="Встановити DirectDrawRenderer на gdi" \
-    title="Set DirectDrawRenderer to gdi"
-w_metadata ddr=opengl settings \
-    title_uk="Встановити DirectDrawRenderer на opengl" \
-    title="Set DirectDrawRenderer to opengl"
-
-load_ddr()
-{
-    if w_wine_version_in ,3.16 ; then
-        winetricks_set_wined3d_var DirectDrawRenderer "$1"
-    else
-        winetricks_set_wined3d_var renderer "$1"
-    fi
-}
-
-#----------------------------------------------------------------
 
 w_metadata glsl=enabled settings \
     title_uk="Увімкнути GLSL шейдери (за замовчуванням)" \
@@ -22279,6 +22263,26 @@ load_strictdrawordering()
 }
 
 #----------------------------------------------------------------
+
+w_metadata renderer=gdi settings \
+    title_uk="Встановити renderer на gdi" \
+    title="Set renderer to gdi"
+w_metadata renderer=gl settings \
+    title_uk="Встановити renderer на gl" \
+    title="Set renderer to gl"
+w_metadata renderer=no3d settings \
+    title_uk="Встановити renderer на no3d" \
+    title="Set renderer to no3d"
+w_metadata renderer=vulkan settings \
+    title_uk="Встановити renderer на vulkan" \
+    title="Set renderer to vulkan"
+
+load_renderer()
+{
+    winetricks_set_wined3d_var renderer "$1"
+}
+
+#----------------------------------------------------------------=
 
 w_metadata rtlm=auto settings \
     title_uk="Встановити RenderTargetLockMode на авто (за замовчуванням)" \
@@ -23171,6 +23175,8 @@ execute_command()
         dotnet1) w_warn "Calling dotnet1 is deprecated, please use dotnet11 instead" ; w_call dotnet11 ;;
         dotnet2) w_warn "Calling dotnet2 is deprecated, please use dotnet20 instead" ; w_call dotnet20 ;;
         d9vk_master) w_warn "Calling d9vk_master is deprecated, please use dxvk_master instead" ; w_call dxvk_master ;;
+        ddr=gdi) w_warn "Calling ddr=gdi is deprecated, please use renderer=gdi or renderer=no3d instead" ; w_call renderer=gdi ;;
+        ddr=opengl) w_warn "Calling ddr=opengl is deprecated, please use renderer=gl instead" ; w_call renderer=gl ;;
         dxvk54) w_warn "Calling dxvk54 is deprecated, please use dxvk054 instead" ; w_call dxvk054 ;;
         dxvk60) w_warn "Calling dxvk60 is deprecated, please use dxvk060 instead" ; w_call dxvk060 ;;
         dxvk61) w_warn "Calling dxvk61 is deprecated, please use dxvk061 instead" ; w_call dxvk061 ;;
