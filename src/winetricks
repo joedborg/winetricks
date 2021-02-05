@@ -5830,7 +5830,7 @@ helper_winxpsp2_support_tools()
     filename="$1"
 
     # https://www.microsoft.com/en-us/download/details.aspx?id=18546
-    w_download_to winxpsp2_support_tools https://download.microsoft.com/download/d/3/8/d38066aa-4e37-4ae8-bce3-a4ce662b2024/WindowsXP-KB838079-SupportTools-ENU.exe 7927e87af616d2fb8d4ead0db0103eb845a4e6651b20a5bffea9eebc3035c24d
+    w_download_to winxpsp2_support_tools https://web.archive.org/web/20070104163903/https://download.microsoft.com/download/d/3/8/d38066aa-4e37-4ae8-bce3-a4ce662b2024/WindowsXP-KB838079-SupportTools-ENU.exe 7927e87af616d2fb8d4ead0db0103eb845a4e6651b20a5bffea9eebc3035c24d
 
     w_try_cabextract -d "${W_TMP}" -L -F support.cab "${W_CACHE}"/winxpsp2_support_tools/WindowsXP-KB838079-SupportTools-ENU.exe
     w_try_cabextract -d "${W_TMP}" -L -F "${filename}" "${W_TMP}"/support.cab
@@ -8407,7 +8407,7 @@ w_metadata dmusic32 dlls \
 
 load_dmusic32()
 {
-    w_download_to directx9 https://download.microsoft.com/download/3/9/7/3972f80c-5711-4e14-9483-959d48a2d03b/directx_apr2006_redist.exe dd8c3d401efe4561b67bd88475201b2f62f43cd23e4acc947bb34a659fa74952
+    w_download_to directx9 https://web.archive.org/web/20100920035904/https://download.microsoft.com/download/3/9/7/3972f80c-5711-4e14-9483-959d48a2d03b/directx_apr2006_redist.exe dd8c3d401efe4561b67bd88475201b2f62f43cd23e4acc947bb34a659fa74952
 
     w_try_cabextract -d "${W_TMP}" -F DirectX.cab "${W_CACHE}"/directx9/directx_apr2006_redist.exe
     w_try_cabextract -d "${W_SYSTEM32_DLLS}" -L -F dmusic32.dll "${W_TMP}"/DirectX.cab
@@ -10060,88 +10060,6 @@ load_filever()
 
 #----------------------------------------------------------------
 
-# FIXME: update winetricks_is_installed to look at installed_file2..n
-# https://github.com/Winetricks/winetricks/issues/988
-w_metadata flash dlls \
-    title="Flash Player 32" \
-    publisher="Adobe" \
-    year="2020" \
-    media="download" \
-    file1="fp_32.0.0.363_archive.zip" \
-    installed_file1="${W_SYSTEM32_DLLS_WIN}/Macromed/Flash/FlashUtil32_32_0_0_363_Plugin.exe" \
-    installed_file2="${W_SYSTEM32_DLLS_WIN}/Macromed/Flash/FlashUtil32_32_0_0_363_ActiveX.exe" \
-    installed_file3="${W_SYSTEM32_DLLS_WIN}/Macromed/Flash/flashplayer32_0r0_363_win_sa.exe" \
-    homepage="https://www.adobe.com/products/flashplayer/"
-
-load_flash()
-{
-    _W_ver_major=32
-    _W_ver_minor=0
-    _W_ver_rel=0
-    _W_ver_build=363
-    _W_dirname="${_W_ver_major}_${_W_ver_minor}_r${_W_ver_rel}_${_W_ver_build}"
-    _W_archive="fp_${_W_ver_major}.${_W_ver_minor}.${_W_ver_rel}.${_W_ver_build}_archive.zip"
-    _W_fileprefix="flashplayer${_W_ver_major}_${_W_ver_minor}r${_W_ver_rel}_${_W_ver_build}"
-
-    # 2013/07/09: Adobe Flash 10 is no longer supported.
-    # 2013/06/24: Adobe Flash 10.3 won't even install for me, it tells you to go get a newer version!
-    # See
-    # https://blogs.adobe.com/psirt/
-    # https://get.adobe.com/de/flashplayer/otherversions/
-    # Now, we install older versions by using zipfiles at
-    # https://helpx.adobe.com/flash-player/kb/archived-flash-player-versions.html
-
-    # 2018/06/24: d4b6f9a5e42cc9f2c7cbd1fd72059d4c1bead91b076afa2ca042d28f0fd7bedb
-    # 2020/05/24  a64230033de485f9454a07cdb1b366e1307d005223657086ab8a0b8b91610ed4
-    w_linkcheck_ignore=1 w_download "https://fpdownload.macromedia.com/pub/flashplayer/installers/archive/${_W_archive}" a64230033de485f9454a07cdb1b366e1307d005223657086ab8a0b8b91610ed4
-
-    # If OS version is Vista or newer:
-    #   1. NPAPI plugin doesn't work
-    #   2. In win64 prefix, "File not found." dialog appears when installing:
-    #      'wine: cannot find L"C:\\windows\\system32\\Macromed\\Temp\\{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}\\InstallFlashPlayer.exe"'
-    w_set_winver winxp
-
-    # ActiveX plugin
-    # 2014/10/02: 3958827058648cfe05fc6ee510685e8d93f995d3428c3eedbd6814704765672a
-    w_try_unzip "${W_TMP}" "${W_CACHE}/flash/${_W_archive}" "${_W_dirname}/${_W_fileprefix}_winax.exe"
-    w_try_cd "${W_TMP}/${_W_dirname}"
-    w_try "${WINE}" "${_W_fileprefix}_winax.exe" ${W_OPT_UNATTENDED:+ /install}
-
-    # Mozilla / Firefox (NPAPI) plugin
-    # 2014/10/02: 17496fd3c863c180aead953d7d4499dd36f997a9570abc2b92f55e4ea1d55d73
-    w_try_unzip "${W_TMP}" "${W_CACHE}/flash/${_W_archive}" "${_W_dirname}/${_W_fileprefix}_win.exe"
-    w_try "${WINE}" "${_W_fileprefix}_win.exe" ${W_OPT_UNATTENDED:+ /install}
-
-    # Projector (standalone player)
-    # 2015/07/06: 8640c42e73dc44125045e17abd32412c48f3808a8393c94fc8281cf4b0d87bdc
-    w_try_unzip "${W_TMP}" "${W_CACHE}/flash/${_W_archive}" "${_W_dirname}/${_W_fileprefix}_win_sa.exe"
-    w_try mv "${_W_fileprefix}_win_sa.exe" "${W_SYSTEM32_DLLS}/Macromed/Flash"
-
-    # After updating the above, you should carry the following steps out by
-    # hand to verify that plugin works.
-
-    #    rm -rf ~/.cache/winetricks/flash
-    #    w_try_cd ~/winetricks/src
-    #    rm -rf ~/.wine
-    #    sh winetricks -q flash ie7
-    #    cd "~/.wine/drive_c/Program Files/Internet Explorer"
-    #    wine iexplore.exe https://www.adobe.com/software/flash/about
-    # Verify that the version of Flash shows up and that you're not prompted
-    # to install Flash again
-    #
-    #    w_try_cd ~/winetricks/src
-    #    rm -rf ~/.wine
-    #    sh winetricks -q flash firefox
-    #    cd "~/.wine/drive_c/Program Files/Mozilla Firefox"
-    #    wine firefox.exe https://www.adobe.com/software/flash/about
-    # Verify that the version of Flash shows up and that you're not prompted
-    # to install Flash again
-
-    unset _W_ver_major _W_ver_minor _W_ver_rel _W_ver_build _W_dirname _W_archive _W_fileprefix
-}
-
-#----------------------------------------------------------------
-
 # $1 - gallium nine standalone archive name (required)
 helper_galliumnine()
 {
@@ -10386,7 +10304,7 @@ load_gfw()
 {
     # https://www.microsoft.com/games/en-us/live/pages/livejoin.aspx
     # http://www.next-gen.biz/features/should-games-for-windows-live-die
-    w_download https://download.microsoft.com/download/5/5/8/55846E20-4A46-4EF8-B272-7F988BC9090A/gfwlivesetupmin.exe b14609508e2f8dba0886ded84e2817ad532ebfa31f8a6d4be2e6a5a03a9d7c23
+    w_download https://web.archive.org/web/20140730232216/https://download.microsoft.com/download/5/5/8/55846E20-4A46-4EF8-B272-7F988BC9090A/gfwlivesetupmin.exe b14609508e2f8dba0886ded84e2817ad532ebfa31f8a6d4be2e6a5a03a9d7c23
 
     # FIXME: Depends on .NET 20, but is it really needed? For now, skip it.
     w_try_cd "${W_CACHE}/${W_PACKAGE}"
@@ -10427,7 +10345,7 @@ w_metadata gmdls dlls \
 
 load_gmdls()
 {
-    w_download_to directx9 https://download.microsoft.com/download/3/9/7/3972f80c-5711-4e14-9483-959d48a2d03b/directx_apr2006_redist.exe dd8c3d401efe4561b67bd88475201b2f62f43cd23e4acc947bb34a659fa74952
+    w_download_to directx9 https://web.archive.org/web/20100920035904/https://download.microsoft.com/download/3/9/7/3972f80c-5711-4e14-9483-959d48a2d03b/directx_apr2006_redist.exe dd8c3d401efe4561b67bd88475201b2f62f43cd23e4acc947bb34a659fa74952
 
     w_try_cabextract -d "${W_TMP}" -F DirectX.cab "${W_CACHE}"/directx9/directx_apr2006_redist.exe
     w_try_cabextract -d "${W_TMP}" -F gm16.dls "${W_TMP}"/DirectX.cab
@@ -10903,7 +10821,7 @@ load_mdac28()
     w_package_unsupported_win64
 
     # https://www.microsoft.com/en-us/download/details.aspx?id=5793
-    w_download https://download.microsoft.com/download/4/a/a/4aafff19-9d21-4d35-ae81-02c48dcbbbff/MDAC_TYP.EXE 157ebae46932cb9047b58aa849ac1885e8cbd2f218810cb83e57613b49c679d6
+    w_download https://web.archive.org/web/20070127061938/https://download.microsoft.com/download/4/a/a/4aafff19-9d21-4d35-ae81-02c48dcbbbff/MDAC_TYP.EXE 157ebae46932cb9047b58aa849ac1885e8cbd2f218810cb83e57613b49c679d6
     load_native_mdac
     w_set_winver nt40
     w_try_cd "${W_CACHE}"/"${W_PACKAGE}"
@@ -12078,7 +11996,7 @@ load_speechsdk()
     w_package_unsupported_win64
 
     # https://www.microsoft.com/en-us/download/details.aspx?id=10121
-    w_download https://download.microsoft.com/download/B/4/3/B4314928-7B71-4336-9DE7-6FA4CF00B7B3/SpeechSDK51.exe 520aa5d1a72dc6f41dc9b8b88603228ffd5d5d6f696224fc237ec4828fe7f6e0
+    w_download https://web.archive.org/web/20110805062427/https://download.microsoft.com/download/B/4/3/B4314928-7B71-4336-9DE7-6FA4CF00B7B3/SpeechSDK51.exe 520aa5d1a72dc6f41dc9b8b88603228ffd5d5d6f696224fc237ec4828fe7f6e0
 
     w_try_unzip "${W_TMP}" "${W_CACHE}"/speechsdk/SpeechSDK51.exe
 
@@ -13553,7 +13471,7 @@ load_xna40()
     fi
 
     # https://www.microsoft.com/en-us/download/details.aspx?id=20914
-    w_download https://download.microsoft.com/download/A/C/2/AC2C903B-E6E8-42C2-9FD7-BEBAC362A930/xnafx40_redist.msi e6c41d692ebcba854dad4b1c52bb7ddd05926bad3105595d6596b8bab01c25e7
+    w_download https://web.archive.org/web/20120325002813/https://download.microsoft.com/download/A/C/2/AC2C903B-E6E8-42C2-9FD7-BEBAC362A930/xnafx40_redist.msi e6c41d692ebcba854dad4b1c52bb7ddd05926bad3105595d6596b8bab01c25e7
     w_try_cd "${W_CACHE}/${W_PACKAGE}"
     w_try "${WINE}" msiexec ${W_OPT_UNATTENDED:+/quiet} /i "${file1}"
 }
@@ -18344,9 +18262,6 @@ w_metadata dcuo games \
 
 load_dcuo()
 {
-    # The installer would take care of this, but let's do it first
-    w_call flash
-
     w_mount "DCUO - Disc 1"
     w_ahk_do "
         SetWinDelay 1000
@@ -23164,7 +23079,6 @@ execute_command()
         dxvk94) w_warn "Calling dxvk94 is deprecated, please use dxvk094 instead" ; w_call dxvk094 ;;
         dxvk95) w_warn "Calling dxvk95 is deprecated, please use dxvk095 instead" ; w_call dxvk095 ;;
         dxvk96) w_warn "Calling dxvk96 is deprecated, please use dxvk096 instead" ; w_call dxvk096 ;;
-        flash11) w_warn "Calling flash11 is deprecated, please use flash instead" ; w_call flash ;;
         # art2kmin also comes with fm20.dll
         fm20) w_warn "Calling fm20 is deprecated, please use controlpad instead" ; w_call controlpad ;;
         fontsmooth-bgr) w_warn "Calling fontsmooth-bgr is deprecated, please use fontsmooth=bgr instead" ; w_call fontsmooth=bgr ;;
