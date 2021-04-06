@@ -1341,13 +1341,17 @@ w_download_to()
                         ;;
                 esac
 
-                if test ! "${WINETRICKS_CONTINUE_DOWNLOAD}" ; then
+                if test "${WINETRICKS_FORCE}" != 1; then
                     case ${LANG} in
                         pl*) w_warn "Niezgodność sum kontrolnych dla ${_W_cache}/${_W_file}, pobieram ponownie" ;;
                         ru*) w_warn "Контрольная сумма файла ${_W_cache}/${_W_file} не совпадает, попытка повторной загрузки" ;;
                         *) w_warn "Checksum for ${_W_cache}/${_W_file} did not match, retrying download" ;;
                     esac
                     mv -f "${_W_cache}/${_W_file}" "${_W_cache}/${_W_file}".bak
+                else
+                    w_warn "Checksum for ${_W_cache}/${_W_file} did not match, but --force was used, so ignoring and trying anyway."
+                    checksum_ok=1
+                    break
                 fi
             else
                 # file exists, no checksum known, declare success and exit loop
@@ -9375,7 +9379,7 @@ w_metadata dotnet45 dlls \
 load_dotnet45()
 {
     w_package_broken "https://bugs.winehq.org/show_bug.cgi?id=49532" 5.12 5.18
-    w_package_broken "https://bugs.winehq.org/show_bug.cgi?id=49897" 5.18
+    w_package_broken "https://bugs.winehq.org/show_bug.cgi?id=49897" 5.18 6.6
 
     w_package_warn_win64
 
@@ -9425,7 +9429,7 @@ w_metadata dotnet452 dlls \
 load_dotnet452()
 {
     w_package_broken "https://bugs.winehq.org/show_bug.cgi?id=49532" 5.12 5.18
-    w_package_broken "https://bugs.winehq.org/show_bug.cgi?id=49897" 5.18
+    w_package_broken "https://bugs.winehq.org/show_bug.cgi?id=49897" 5.18 6.6
 
     w_package_warn_win64
 
@@ -9669,7 +9673,7 @@ w_metadata dotnet48 dlls \
 load_dotnet48()
 {
     w_package_broken "https://bugs.winehq.org/show_bug.cgi?id=49532" 5.12 5.18
-    w_package_broken "https://bugs.winehq.org/show_bug.cgi?id=49897" 5.18
+    w_package_broken "https://bugs.winehq.org/show_bug.cgi?id=49897" 5.18 6.6
 
     w_package_warn_win64
 
@@ -12886,9 +12890,11 @@ load_vcrun2019()
     # 2020/11/13: 50a3e92ade4c2d8f310a2812d46322459104039b9deadbd7fdd483b5c697c0c8
     # 2021/03/09: 4521ed84b9b1679a706e719423d54ef5e413dc50dde1cf362232d7359d7e89c4
     # 2021/03/28: e830c313aa99656748f9d2ed582c28101eaaf75f5377e3fb104c761bf3f808b2
-    w_download https://aka.ms/vs/16/release/vc_redist.x86.exe e830c313aa99656748f9d2ed582c28101eaaf75f5377e3fb104c761bf3f808b2
+    # 2021/04/05: e830c313aa99656748f9d2ed582c28101eaaf75f5377e3fb104c761bf3f808b2
 
     w_override_dlls native,builtin api-ms-win-crt-private-l1-1-0 api-ms-win-crt-conio-l1-1-0 api-ms-win-crt-heap-l1-1-0 api-ms-win-crt-locale-l1-1-0 api-ms-win-crt-math-l1-1-0 api-ms-win-crt-runtime-l1-1-0 api-ms-win-crt-stdio-l1-1-0 api-ms-win-crt-time-l1-1-0 atl140 concrt140 msvcp140 msvcp140_1 msvcp140_2 msvcr140 ucrtbase vcomp140 vcruntime140
+
+    w_download https://aka.ms/vs/16/release/vc_redist.x86.exe e830c313aa99656748f9d2ed582c28101eaaf75f5377e3fb104c761bf3f808b2
 
     # Otherwise ucrtbase doesn't get replaced
     # See https://bugs.winehq.org/show_bug.cgi?id=46317
@@ -12911,11 +12917,12 @@ load_vcrun2019()
             # 2020/11/13: b1a32c71a6b7d5978904fb223763263ea5a7eb23b2c44a0d60e90d234ad99178
             # 2021/03/09: f299953673de262fefad9dd19bfbe6a5725a03ae733bebfec856f1306f79c9f7
             # 2021/03/28: b6c82087a2c443db859fdbeaae7f46244d06c3f2a7f71c35e50358066253de52
+            # 2021/04/05: 015edd4e5d36e053b23a01adb77a2b12444d3fb6eccefe23e3a8cd6388616a16
 
             # vcruntime140_1 is only shipped on x64:
             w_override_dlls native,builtin vcruntime140_1
 
-            w_download https://aka.ms/vs/16/release/vc_redist.x64.exe b6c82087a2c443db859fdbeaae7f46244d06c3f2a7f71c35e50358066253de52
+            w_download https://aka.ms/vs/16/release/vc_redist.x64.exe 015edd4e5d36e053b23a01adb77a2b12444d3fb6eccefe23e3a8cd6388616a16
             w_try "${WINE}" vc_redist.x64.exe ${W_OPT_UNATTENDED:+/q}
             ;;
     esac
@@ -14271,7 +14278,8 @@ w_metadata lucida fonts \
 
 load_lucida()
 {
-    w_download "https://ftpmirror.your.org/pub/misc/ftp.microsoft.com/bussys/winnt/winnt-public/fixes/usa/NT40TSE/hotfixes-postSP3/Euro-fix/eurofixi.exe" 41f272a33521f6e15f2cce9ff1e049f2badd5ff0dc327fc81b60825766d5b6c7
+    # The site supports https with Let's Encrypt, but that cert fails with curl (which breaks src/linkcheck.sh)
+    w_download "http://ftpmirror.your.org/pub/misc/ftp.microsoft.com/bussys/winnt/winnt-public/fixes/usa/NT40TSE/hotfixes-postSP3/Euro-fix/eurofixi.exe" 41f272a33521f6e15f2cce9ff1e049f2badd5ff0dc327fc81b60825766d5b6c7
     w_try_cabextract -d "${W_TMP}" -F "lucon.ttf" "${W_CACHE}"/lucida/eurofixi.exe
     w_try_cp_font_files "${W_TMP}" "${W_FONTSDIR_UNIX}"
     w_register_font lucon.ttf "Lucida Console"
