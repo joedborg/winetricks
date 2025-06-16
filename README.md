@@ -1,11 +1,11 @@
 # Winetricks
-[![Build Status](https://travis-ci.org/Winetricks/winetricks.svg?branch=master)](https://travis-ci.org/Winetricks/winetricks) [![License](http://img.shields.io/:license-lgpl-green.svg)](https://tldrlegal.com/license/gnu-lesser-general-public-license-v2.1-(lgpl-2.1))
+[![License](https://img.shields.io/:license-lgpl-green.svg)](https://tldrlegal.com/license/gnu-lesser-general-public-license-v2.1-(lgpl-2.1))
 
 Homepage of Winetricks, previously hosted at <https://code.google.com/p/winetricks>.
 
 Winetricks is an easy way to work around problems in Wine.
 
-It has a menu of supported games/apps for which it can do all the workarounds automatically. It also allows the installation of missing DLLs and tweaking of various Wine settings.
+It has a menu of supported applications for which it can do all the workarounds automatically. It also allows the installation of missing DLLs and tweaking of various Wine settings.
 
 The latest version can be downloaded here:
 https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks
@@ -17,16 +17,18 @@ https://github.com/Winetricks/winetricks/releases
 The ```winetricks``` package should be used if it is available and up to date. The package is available in most mainstream (Unix-like) Operating Systems:
 
 * Arch: https://www.archlinux.org/packages/multilib/x86_64/winetricks/
-* Debian: https://packages.debian.org/sid/winetricks
+* Debian: https://packages.debian.org/search?searchon=names&keywords=winetricks
 * Fedora: https://fedoraproject.org/wiki/Wine#Packages
 * FreeBSD: https://www.freebsd.org/cgi/ports.cgi?query=winetricks&stype=all
 * Gentoo: https://packages.gentoo.org/packages/app-emulation/winetricks
 * Homebrew (OSX): https://formulae.brew.sh/formula/winetricks
 * MacPorts (OSX): https://www.macports.org/ports.php?by=name&substr=winetricks
-* Slackbuilds (Slackware): http://slackbuilds.org/repository/14.2/system/winetricks/?search=winetricks
+* Slackbuilds (Slackware): https://slackbuilds.org/apps/winetricks/
 * Ubuntu: https://packages.ubuntu.com/search?keywords=winetricks
 
 Note: packaged Debian / Ubuntu winetricks versions are typically outdated, so a manual installation is recommended.
+
+## Manual Install
 
 If the package is unavailable, outdated, or the latest version is desired, a manual installation of winetricks can be done.
 It is _highly_ recommended to uninstall any previously installed version of winetricks first.
@@ -38,8 +40,17 @@ E.g. for Debian / Ubuntu:
 sudo apt-get purge winetricks
 ```
 
-Then, for Ubuntu, use a shell script to download the current winetricks script(s).
-E.g.:
+### Installing The Latest Stable Release
+
+Download the latest release from [Github](https://github.com/Winetricks/winetricks/releases/latest).
+
+Extract the archive and `cd` into the extracted folder.
+
+Run `sudo make install` to install Winetricks system-wide.
+
+### Scripted Install
+
+You can use a shell script to download the current winetricks script(s):
 
 ```
 #!/bin/sh
@@ -78,6 +89,13 @@ wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetric
 # Move the winetricks BASH completion script to a standard location for BASH completion modules. See:
 #   https://www.tldp.org/LDP/abs/html/tabexpansion.html
 sudo mv winetricks.bash-completion /usr/share/bash-completion/completions/winetricks
+
+# Download the latest winetricks MAN page (master="latest version") from Github.
+wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks.1
+
+# Move the winetricks MAN page to a standard location for MAN pages. See:
+#   https://www.pathname.com/fhs/pub/fhs-2.3.html#USRSHAREMANMANUALPAGES
+sudo mv winetricks.1 /usr/share/man/man1/winetricks.1
 _EOF_SCRIPT
 ###### create update_winetricks FINISH ########
 
@@ -116,8 +134,7 @@ chmod +x update_winetricks
 su root sh -c 'mv update_winetricks /usr/bin/'
 ```
 
-To use ```curl``` instead of ```wget```: subsitute all ```wget``` calls with ```curl -O```, in the winetricks update script.
-
+To use ```curl``` instead of ```wget```: substitute all ```wget``` calls with ```curl -O```, in the winetricks update script.
 
 # Updating
 Using the traditional Unix crontab...
@@ -192,7 +209,7 @@ w_metadata icecat apps \
 load_icecat()
 {
     w_download https://ftp.gnu.org/gnu/gnuzilla/38.8.0/${file1} e5f9481e78710c25eb3a271d81aceb19ef44ff6e8599da7d5f7a2da584c01213
-    w_try_unzip "${W_PROGRAMS_X86_UNIX}" "${W_CACHE}/${W_PACKAGE}/${file1}"
+    w_try_unzip "${W_PROGRAMS_X86_UNIX}" "${W_CACHE}/${W_PACKAGE}/icecat-38.8.0.en-us.win32.zip"
 }
 ```
 

@@ -41,14 +41,17 @@ fi
 datadir="${TOP}/output/links.d"
 mkdir -p "${datadir}"
 
-# ftp.microsoft.com resolves to two different IP addresses, one of which is broken
-ftp_microsoft_com=64.4.17.176
-
+# This is used by url-script-fragment.tmp below in extract_all()
+# shellcheck disable=SC2317
 w_download() {
-    # shellcheck disable=SC2016
-    url="$(echo "$1" | sed -e 's,$ftp_microsoft_com,'${ftp_microsoft_com}',;s, ,%20,g')"
+    url="${1}"
     urlkey="$(echo "${url}" | tr / _)"
     echo "${url}" > "${datadir}/${urlkey}.url"
+}
+# shellcheck disable=SC2317
+w_download_to() {
+    shift
+    w_download "$@"
 }
 
 # Extract list of URLs from winetricks
@@ -59,7 +62,11 @@ extract_all() {
 
     # https://github.com/koalaman/shellcheck/issues/861
     # shellcheck disable=SC1003
-    grep '^ *w_download ' "${shwinetricks}" | grep -E 'ftp|http' | grep -v "w_linkcheck_ignore=1" | sed 's/^ *//' | tr -d '\\' > url-script-fragment.tmp
+    grep -E '^[^#]*w_download(_to)? .*(http|ftp)s?://' "${shwinetricks}"    \
+        | grep -vE "(w_linkcheck_ignore|WINETRICKS_SUPER_QUIET)=(TRUE|1)"   \
+        | sed 's/^.*w_download/w_download/'                                 \
+        | sed -E "s/\\$/%24/g"                                              \
+        | tr -d '\\' > url-script-fragment.tmp
 
     # shellcheck disable=SC1091
     . ./url-script-fragment.tmp
@@ -101,7 +108,7 @@ crawl_one() {
     base=${urlfile%.url}
     url="$(cat "${urlfile}")"
 
-    curl --connect-timeout 10 --retry 6 -s -S -I "${url}" 2>&1 |
+    curl --connect-timeout 60 --retry-connrefused --retry 10 -s -S -I "${url}" 2>&1 |
         tr -d '\015' |
         grep . |
         sort > "${base}.log"

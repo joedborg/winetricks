@@ -47,26 +47,20 @@ trap 'rm -fr "$temp"' EXIT
 
 # tests using bashate
 test_bashate() {
-    if [ ! -x "$(command -v bashate 2>/dev/null)" ] && [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-        echo "On OSX and bashate not available, skipping."
-        return
-    else
-        bashate="$(command -v bashate)"
+    bashate="$(command -v bashate || true)"
 
-        #echo "======================== Begin bashate version info ==========================="
-        "${bashate}" --help > /dev/null || w_die "bashate must be installed!"
-        ## bashate doesn't have a --version option (as of bashate-0.3.1)
-        #"$bashate" --version
-        #echo "======================== End bashate version info ==========================="
+    #echo "======================== Begin bashate version info ==========================="
+    "${bashate}" --help > /dev/null || w_die "bashate must be installed!"
+    ## bashate doesn't have a --version option (as of bashate-0.3.1)
+    #"$bashate" --version
+    #echo "======================== End bashate version info ==========================="
 
-        # Can't ignore individual things for now, filed bug:
-        # https://bugs.launchpad.net/bash8/+bug/1698088
-        # E006=line length check
-        # E010=do/while same line (in some embedded perl in winetricks)
-        # E044=Use [[ for non-POSIX comparisions
-        echo "Checking ${shellscript} with bashate:"
-        w_try "${bashate}" -i E006,E010,E044 "${shellscript}"
-    fi
+    # Can't ignore individual things for now, filed bug:
+    # https://bugs.launchpad.net/bash8/+bug/1698088
+    # E006=line length check
+    # E044=Use [[ for non-POSIX comparisons
+    echo "Checking ${shellscript} with bashate:"
+    w_try "${bashate}" -i E006,E044 "${shellscript}"
 }
 
 # check formatting, (no trailing whitespace, no tabs)
@@ -96,46 +90,40 @@ test_formatting() {
 
 # tests using shellcheck
 test_shellcheck() {
-    if [ ! -x "$(command -v shellcheck 2>/dev/null)" ] && [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-        echo "On OSX and shellcheck not available, skipping."
-        return
-    else
-        shellcheck="$(command -v shellcheck)"
+    shellcheck="$(command -v shellcheck || true)"
 
-        echo "======================== Begin shellcheck version info ==========================="
-        "${shellcheck}" --version > /dev/null || w_die "shellcheck must be installed!"
-        "${shellcheck}" --version
-        echo "======================== End shellcheck version info ==========================="
+    echo "======================== Begin shellcheck version info ==========================="
+    "${shellcheck}" --version > /dev/null || w_die "shellcheck must be installed!"
+    "${shellcheck}" --version
+    echo "======================== End shellcheck version info ==========================="
 
-        echo "Checking ${shellscript} with shellcheck:"
-        w_try "${shellcheck}" -s sh "${shellscript}"
-    fi
+    echo "Checking ${shellscript} with shellcheck:"
+    w_try "${shellcheck}" -s sh "${shellscript}"
 }
 
 # tests for linkcheck
 test_linkcheck() {
     # Check for uses of variables in w_download when w_linkcheck_ignore isn't set
     # Using w_download https://example.com/${file1} breaks src/linkcheck.sh
-    # FIXME: technically '$' is valid in a URL, if there's actually a URL using it this will need a tweak
-    if grep "^ *w_download " src/winetricks | grep -E "ftp|http" | grep -v "w_linkcheck_ignore=1" | sed "s/^ *//"  | tr -d "\\\\" | cut -d " " -f2 | grep "\\$"; then
+    # Escaped '$', as in '\$' are allowed
+
+    test_func() {
+        # No comment, only with protocol, skip flagged as ignored, remove indention
+        # and flags, fix double space, get n-th arg, find vars '$' and ignore '\$'.
+        func_name=${1}
+        url_arg=${2}
+        grep -E '^[^#]*'"${func_name}"' .*(http|ftp)s?://' "src/winetricks"     \
+            | grep -vE "(w_linkcheck_ignore|WINETRICKS_SUPER_QUIET)=(TRUE|1)"   \
+            | sed 's/^.*'"${func_name}"'/'"${func_name}"'/'                     \
+            | tr -s " "                                                         \
+            | cut -d " " -f "${url_arg}"                                        \
+            | grep -E "([^\\\\\]+\\$)"
+    }
+
+    if ( test_func "w_download_to" 3 ) || ( test_func "w_download" 2 ); then
         w_die "Do not use variables in these URLs, it breaks src/linkcheck.sh"
     else
         echo "linkcheck checks passed"
-    fi
-}
-
-test_travis_yml() {
-    if [ ! -x "$(command -v yq 2>/dev/null)" ]; then
-        echo "warning: yq unavilable, skipping .travis.yml validation"
-    else
-        yq="$(command -v yq)"
-
-        if [ -n "${yq}" ]; then
-            echo "yq available, validating .travis.yml"
-            yq . .travis.yml || true
-        else
-            echo "warning: yq not available, not validating .travis.yml"
-        fi
     fi
 }
 
@@ -157,11 +145,6 @@ main() {
 
     # really, this checks winetricks, to make sure it doesn't break linkcheck.sh:
     test_linkcheck
-
-    # make sure yq (if present), can validate .travis_yml.
-    # Available in brew, not ubuntu (without snap), but if .travis_yml is invalid,
-    # travis won't run anyway. Only useful when running locally.
-    test_travis_yml
 
     # Generic shellscript checks:
     for shellscript in ${files_to_check}; do
